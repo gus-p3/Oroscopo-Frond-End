@@ -1,0 +1,191 @@
+<div class="admin-layout">
+
+  <!-- ===== SIDEBAR / PANEL PRINCIPAL ===== -->
+  <div class="main-panel" [class.shifted]="detalleAbierto">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <a class="back-link" routerLink="/">
+          <mat-icon>arrow_back</mat-icon>
+        </a>
+        <div>
+          <p class="topbar-label">Zodiaco · Sistema</p>
+          <h1 class="topbar-title">Panel de Administración</h1>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-logout" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          Cerrar sesión
+        </button>
+        <button class="btn-export" (click)="exportarCsv()">
+          <mat-icon>download</mat-icon>
+          Exportar CSV
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Cards -->
+    <section class="stats-row" *ngIf="estadisticas">
+      <div class="stat-card">
+        <mat-icon class="stat-icon">assignment_turned_in</mat-icon>
+        <div>
+          <p class="stat-label">Total de Envíos</p>
+          <p class="stat-value">{{ estadisticas.totalEnvios }}</p>
+        </div>
+      </div>
+
+      <div class="stat-card elemento-card" *ngFor="let el of estadisticas.distribucionElementos">
+        <span class="stat-emoji">{{ getEmoji(el.nombre) }}</span>
+        <div>
+          <p class="stat-label">{{ el.nombre }}</p>
+          <p class="stat-value">{{ el.count }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filtros -->
+    <div class="filters-bar">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Género</mat-label>
+        <mat-select [(ngModel)]="filtros.genero" (selectionChange)="aplicarFiltros()">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="Femenino">Femenino</mat-option>
+          <mat-option value="Masculino">Masculino</mat-option>
+          <mat-option value="Otro">Otro</mat-option>
+          <mat-option value="Prefiero no decir">Prefiero no decir</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Signo</mat-label>
+        <mat-select [(ngModel)]="filtros.signoZodiacalId" (selectionChange)="aplicarFiltros()">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let s of signos" [value]="s._id">{{ s.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <span class="results-count">{{ totalEnvios }} registro(s)</span>
+    </div>
+
+    <!-- Tabla de envíos -->
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Género</th>
+            <th>Signo</th>
+            <th>Elemento</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let env of envios" class="table-row" (click)="verDetalle(env)">
+            <td class="td-nombre">{{ env.personaId?.nombre }}</td>
+            <td>{{ env.personaId?.genero }}</td>
+            <td>{{ getSignoNombre(env.personaId) }}</td>
+            <td>
+              <span class="elemento-badge" *ngIf="env.predominante">
+                {{ getEmoji(env.predominante?.nombre) }} {{ env.predominante?.nombre }}
+              </span>
+            </td>
+            <td class="td-fecha">{{ env.fechaEnvio | date:'dd/MM/yy HH:mm' }}</td>
+            <td><mat-icon class="row-arrow">chevron_right</mat-icon></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="empty-state" *ngIf="envios.length === 0">
+        <mat-icon>inbox</mat-icon>
+        <p>No hay registros con los filtros actuales.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== PANEL DE DETALLE (drawer) ===== -->
+  <aside class="detail-drawer" [class.open]="detalleAbierto">
+    <div class="drawer-header">
+      <button class="btn-close" (click)="cerrarDetalle()">
+        <mat-icon>close</mat-icon>
+      </button>
+      <h2>Detalle del Envío</h2>
+    </div>
+
+    <div class="drawer-body" *ngIf="cargandoDetalle">
+      <div class="loading-ring"></div>
+      <p>Cargando respuestas…</p>
+    </div>
+
+    <div class="drawer-body" *ngIf="detalleEnvio && !cargandoDetalle">
+
+      <!-- Info personal -->
+      <div class="detail-section">
+        <p class="section-label">Persona</p>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-key">Nombre</span>
+            <span class="info-val">{{ detalleEnvio.envio.personaId?.nombre }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Género</span>
+            <span class="info-val">{{ detalleEnvio.envio.personaId?.genero }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Signo</span>
+            <span class="info-val">{{ detalleEnvio.envio.personaId?.signoZodiacalId?.nombre }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Fecha</span>
+            <span class="info-val">{{ detalleEnvio.envio.fechaEnvio | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Puntajes -->
+      <div class="detail-section">
+        <p class="section-label">Puntajes por Elemento</p>
+        <div class="puntajes-list">
+          <div class="puntaje-row" *ngFor="let p of detalleEnvio.puntajes">
+            <span class="puntaje-nombre">
+              {{ getEmoji(p.elementoId?.nombre) }} {{ p.elementoId?.nombre }}
+            </span>
+            <div class="puntaje-bar-track">
+              <div class="puntaje-bar-fill"
+                   [style.width.%]="(p.puntajeTotal / 15) * 100"
+                   [class.predominante]="p.esPredominante">
+              </div>
+            </div>
+            <span class="puntaje-pts">{{ p.puntajeTotal }} pts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Respuestas a las 12 preguntas -->
+      <div class="detail-section">
+        <p class="section-label">Respuestas ({{ detalleEnvio.respuestas.length }} preguntas)</p>
+        <div class="respuestas-list">
+          <div class="respuesta-item" *ngFor="let r of detalleEnvio.respuestas; let i = index">
+            <div class="resp-pregunta">
+              <span class="resp-num">{{ i + 1 }}</span>
+              <span class="resp-texto">{{ r.preguntaId?.texto }}</span>
+            </div>
+            <div class="resp-opcion">
+              <mat-icon class="resp-check">check_circle</mat-icon>
+              <span>{{ r.textoRespuestaCualitativa }}</span>
+              <span class="resp-valor">Nivel {{ r.valorAspecto }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- Overlay para cerrar el drawer -->
+  <div class="drawer-overlay" [class.visible]="detalleAbierto" (click)="cerrarDetalle()"></div>
+
+</div>

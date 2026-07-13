@@ -1,0 +1,78 @@
+<div class="page-bg" *ngIf="resultado">
+
+  <!-- Hero del elemento ganador -->
+  <div class="hero-resultado" [style.background]="ganadorMeta?.gradient ?? 'linear-gradient(135deg, #302b63, #24243e)'">
+    <div class="confetti-bg"></div>
+    <div class="hero-inner">
+      <p class="hero-label">Tu elemento predominante</p>
+      <div class="elemento-emoji">{{ ganadorMeta?.emoji ?? '✦' }}</div>
+      <h1 class="elemento-nombre">{{ elementoGanador?.nombre ?? '?' }}</h1>
+      <p class="elemento-puntaje">{{ elementoGanador?.puntajeTotal }} puntos · {{ elementoGanador?.porcentaje }}% del máximo</p>
+
+      <div class="usuario-chip">
+        <mat-icon>person</mat-icon>
+        {{ datosUsuario?.nombre }}
+      </div>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+
+    <!-- Balance de Elementos -->
+    <section class="section-card">
+      <h2 class="section-title">
+        <mat-icon>bar_chart</mat-icon> Balance de Elementos
+      </h2>
+
+      <div class="bar-chart">
+        <div class="bar-row" *ngFor="let el of elementosList">
+          <div class="bar-meta">
+            <span class="bar-emoji">{{ el.meta.emoji }}</span>
+            <span class="bar-label" [style.color]="el.meta.color">{{ el.nombre }}</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill"
+                 [style.width.%]="el.porcentaje"
+                 [style.background]="el.meta.gradient"
+                 [class.ganador]="el.esPredominante">
+            </div>
+          </div>
+          <span class="bar-value">{{ el.puntajeTotal }} pts</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vector de personalidad -->
+    <section class="section-card">
+      <h2 class="section-title">
+        <mat-icon>psychology</mat-icon> Vector de Personalidad (12 Aspectos)
+      </h2>
+
+      <div class="aspectos-grid">
+        <div class="aspecto-item" *ngFor="let asp of aspectosList">
+          <div class="aspecto-info">
+            <span class="aspecto-nombre">{{ asp.nombre }}</span>
+            <span class="nivel-label">{{ getNivelLabel(asp.valor) }}</span>
+          </div>
+          <div class="nivel-track">
+            <div class="nivel-fill"
+                 [style.width.%]="(asp.valor / 4) * 100"
+                 [class]="'nivel-' + asp.valor">
+            </div>
+          </div>
+          <span class="nivel-numero">{{ asp.valor }}/4</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Acción final -->
+  <div class="footer-action">
+    <button class="btn-reiniciar" (click)="reiniciar()">
+      <mat-icon>refresh</mat-icon>
+      Hacer el cuestionario de nuevo
+    </button>
+  </div>
+
+</div>

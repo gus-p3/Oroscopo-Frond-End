@@ -1,0 +1,10 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', 'Segoe UI', sans-serif;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}

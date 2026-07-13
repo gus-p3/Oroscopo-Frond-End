@@ -1,0 +1,86 @@
+<div class="login-page">
+
+  <div class="login-left">
+    <div class="brand">✦ Zodiaco</div>
+    <div class="brand-tagline">
+      <h1>Panel de Administración</h1>
+      <p>Acceso restringido al personal autorizado del sistema.</p>
+    </div>
+    <div class="decoration">
+      <span class="deco-elem">🔥</span>
+      <span class="deco-elem">🌿</span>
+      <span class="deco-elem">💨</span>
+      <span class="deco-elem">🌊</span>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-card">
+      <div class="card-header">
+        <h2>Iniciar sesión</h2>
+        <p>Ingresa tus credenciales de administrador.</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="login-form" novalidate>
+
+        <!-- Email -->
+        <div class="field-group" [class.has-error]="email.invalid && email.touched">
+          <label class="field-label" for="login-email">Correo electrónico</label>
+          <div class="input-wrapper">
+            <mat-icon class="input-icon">alternate_email</mat-icon>
+            <input
+              id="login-email"
+              class="field-input"
+              type="email"
+              formControlName="email"
+              placeholder="admin@orosco.com"
+              autocomplete="email" />
+          </div>
+          <span class="error-msg" *ngIf="email.invalid && email.touched">
+            Ingresa un correo válido.
+          </span>
+        </div>
+
+        <!-- Password -->
+        <div class="field-group" [class.has-error]="password.invalid && password.touched">
+          <label class="field-label" for="login-password">Contraseña</label>
+          <div class="input-wrapper">
+            <mat-icon class="input-icon">lock</mat-icon>
+            <input
+              id="login-password"
+              class="field-input"
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="••••••••"
+              autocomplete="current-password" />
+            <button type="button" class="toggle-pw" (click)="showPassword = !showPassword">
+              <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+          <span class="error-msg" *ngIf="password.invalid && password.touched">
+            La contraseña es requerida.
+          </span>
+        </div>
+
+        <!-- Error global -->
+        <div class="alert-error" *ngIf="loginError">
+          <mat-icon>error_outline</mat-icon>
+          Credenciales incorrectas. Intenta de nuevo.
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-login" [disabled]="loading">
+          <span class="spinner-sm" *ngIf="loading"></span>
+          <mat-icon *ngIf="!loading">login</mat-icon>
+          {{ loading ? 'Verificando…' : 'Entrar al panel' }}
+        </button>
+
+      </form>
+
+      <a routerLink="/" class="back-to-quiz">
+        <mat-icon>arrow_back</mat-icon> Volver al cuestionario
+      </a>
+    </div>
+  </div>
+
+</div>

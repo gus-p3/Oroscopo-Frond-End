@@ -1,0 +1,109 @@
+<!-- Nav mínima -->
+<nav class="top-nav" *ngIf="!cargando">
+  <span class="nav-brand">✦ Zodiaco</span>
+</nav>
+
+<!-- ===================== PASO 0: DATOS PERSONALES ===================== -->
+<div class="page-wrap" *ngIf="!cargando && pasoActual === 0" [formGroup]="datosPersonalesForm">
+  <div class="step-hero">
+    <p class="step-eyebrow">Cuestionario de Personalidad</p>
+    <h1 class="step-title">Descubre tu elemento del Zodiaco</h1>
+    <p class="step-desc">12 preguntas · Análisis basado en los 4 elementos · Resultado inmediato</p>
+  </div>
+
+  <div class="form-card">
+    <h2 class="card-title">Antes de comenzar…</h2>
+
+    <div class="field-block">
+      <label class="field-label" for="nombre-input">Nombre completo</label>
+      <input id="nombre-input" class="field-input" formControlName="nombre" placeholder="Ej. María García" autocomplete="name" />
+    </div>
+
+    <div class="field-block">
+      <label class="field-label">Género</label>
+      <div class="chip-group">
+        <button *ngFor="let g of ['Femenino','Masculino','Otro','Prefiero no decir']"
+                type="button"
+                class="chip"
+                [class.active]="datosPersonalesForm.get('genero')?.value === g"
+                (click)="datosPersonalesForm.get('genero')?.setValue(g)">{{ g }}</button>
+      </div>
+    </div>
+
+    <div class="field-block">
+      <label class="field-label">Signo zodiacal</label>
+      <mat-form-field appearance="outline" class="select-full">
+        <mat-select formControlName="signoZodiacalId" placeholder="Selecciona tu signo">
+          <mat-option *ngFor="let signo of signos" [value]="signo._id">
+            {{ signo.nombre }} · {{ signo.elementoId.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <button class="btn-primary full" (click)="siguientePaso()" [disabled]="!datosPersonalesForm.valid">
+      Comenzar el cuestionario <mat-icon>arrow_forward</mat-icon>
+    </button>
+  </div>
+</div>
+
+<!-- ===================== PREGUNTAS: CASCADA ===================== -->
+<div class="page-wrap" *ngIf="!cargando && pasoActual > 0" [formGroup]="respuestasForm">
+
+  <!-- Barra de progreso pegada al top nav -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" [style.width.%]="progreso"></div>
+  </div>
+
+  <div class="quiz-header">
+    <button class="btn-back" (click)="pasoAnterior()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="quiz-header-info">
+      <p class="quiz-eyebrow">Pregunta {{ pasoActual }} de {{ preguntas.length }}</p>
+      <div class="progress-dots">
+        <span *ngFor="let p of preguntas; let i = index"
+              class="dot"
+              [class.done]="i < pasoActual - 1"
+              [class.active]="i === pasoActual - 1">
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="preguntaActual">
+    <div class="question-wrap">
+      <h2 class="question-text">{{ preguntaActual.texto }}</h2>
+
+      <!-- Opciones en lista vertical (cascada) -->
+      <div class="options-list" [hidden]="false">
+        <label *ngFor="let opcion of preguntaActual.opciones; let i = index"
+               class="option-item"
+               [class.selected]="estaSeleccionada(opcion._id)"
+               (click)="seleccionarOpcion(preguntaActual._id, opcion._id)">
+          <span class="option-key">{{ ['A','B','C','D'][i] }}</span>
+          <span class="option-text">{{ opcion.texto }}</span>
+          <mat-icon class="option-check">check</mat-icon>
+        </label>
+      </div>
+
+      <!-- Botón manual si no avanzó automáticamente -->
+      <div class="manual-next" *ngIf="respuestasForm.get(preguntaActual._id)?.valid">
+        <button class="btn-primary" (click)="siguientePaso()" *ngIf="!esUltimaPregunta">
+          Siguiente pregunta <mat-icon>arrow_forward</mat-icon>
+        </button>
+        <button class="btn-accent" (click)="finalizar()" *ngIf="esUltimaPregunta" [disabled]="enviando">
+          <mat-icon>auto_awesome</mat-icon>
+          {{ enviando ? 'Calculando…' : 'Ver mi elemento' }}
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+</div>
+
+<!-- Cargando -->
+<div class="loading-page" *ngIf="cargando">
+  <div class="spinner"></div>
+  <p>Cargando el cuestionario…</p>
+</div>
