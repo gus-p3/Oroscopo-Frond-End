@@ -1,75 +1,104 @@
-<div class="page-bg" *ngIf="resultado">
+<!-- Nav mínima -->
+<nav class="top-nav" *ngIf="resultado">
+  <span class="nav-brand">✦ Zodiaco</span>
+</nav>
+
+<div class="page-wrap" *ngIf="resultado">
 
   <!-- Hero del elemento ganador -->
-  <div class="hero-resultado" [style.background]="ganadorMeta?.gradient ?? 'linear-gradient(135deg, #302b63, #24243e)'">
-    <div class="confetti-bg"></div>
-    <div class="hero-inner">
-      <p class="hero-label">Tu elemento predominante</p>
-      <div class="elemento-emoji">{{ ganadorMeta?.emoji ?? '✦' }}</div>
-      <h1 class="elemento-nombre">{{ elementoGanador?.nombre ?? '?' }}</h1>
-      <p class="elemento-puntaje">{{ elementoGanador?.puntajeTotal }} puntos · {{ elementoGanador?.porcentaje }}% del máximo</p>
+  <div class="resultado-hero-card" [style.border-top-color]="ganadorMeta?.color">
+    <p class="resultado-eyebrow">Tu elemento predominante</p>
+    <div class="elemento-display">
+      <span class="elemento-emoji-large" [style.background]="ganadorMeta?.gradient">{{ ganadorMeta?.emoji ?? '✦' }}</span>
+      <div>
+        <h1 class="elemento-title-name" [style.color]="ganadorMeta?.color">{{ elementoGanador?.nombre ?? '?' }}</h1>
+        <p class="elemento-meta-details">
+          <strong>{{ elementoGanador?.puntajeTotal }}</strong> puntos obtenidos
+        </p>
+      </div>
+    </div>
 
-      <div class="usuario-chip">
+    <div class="user-info-row">
+      <div class="info-badge">
         <mat-icon>person</mat-icon>
-        {{ datosUsuario?.nombre }}
+        <span>{{ datosUsuario?.nombre }}</span>
+      </div>
+      <div class="info-badge">
+        <mat-icon>star</mat-icon>
+        <span>Signo: {{ datosUsuario?.signoZodiacalId ? 'Registrado' : 'Zodiacal' }}</span>
       </div>
     </div>
   </div>
 
-  <div class="content-wrapper">
+  <!-- Balance de Elementos -->
+  <div class="form-card">
+    <h2 class="card-title">
+      <mat-icon style="vertical-align: middle; margin-right: 8px; color: #6366f1;">bar_chart</mat-icon>
+      Balance de Elementos
+    </h2>
+    <p class="section-subtitle-desc">
+      Distribución de tu afinidad energética en base a tus respuestas.
+    </p>
 
-    <!-- Balance de Elementos -->
-    <section class="section-card">
-      <h2 class="section-title">
-        <mat-icon>bar_chart</mat-icon> Balance de Elementos
-      </h2>
-
-      <div class="bar-chart">
-        <div class="bar-row" *ngFor="let el of elementosList">
-          <div class="bar-meta">
-            <span class="bar-emoji">{{ el.meta.emoji }}</span>
-            <span class="bar-label" [style.color]="el.meta.color">{{ el.nombre }}</span>
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill"
-                 [style.width.%]="el.porcentaje"
-                 [style.background]="el.meta.gradient"
-                 [class.ganador]="el.esPredominante">
-            </div>
-          </div>
-          <span class="bar-value">{{ el.puntajeTotal }} pts</span>
+    <div class="bar-chart-container">
+      <div class="element-bar-row" *ngFor="let el of elementosList">
+        <div class="element-info-label">
+          <span class="element-emoji-label">{{ el.meta.emoji }}</span>
+          <span class="element-name-label" [style.color]="el.meta.color">{{ el.nombre }}</span>
         </div>
-      </div>
-    </section>
-
-    <!-- Vector de personalidad -->
-    <section class="section-card">
-      <h2 class="section-title">
-        <mat-icon>psychology</mat-icon> Vector de Personalidad (12 Aspectos)
-      </h2>
-
-      <div class="aspectos-grid">
-        <div class="aspecto-item" *ngFor="let asp of aspectosList">
-          <div class="aspecto-info">
-            <span class="aspecto-nombre">{{ asp.nombre }}</span>
-            <span class="nivel-label">{{ getNivelLabel(asp.valor) }}</span>
+        <div class="element-track-bar">
+          <div class="element-fill-bar"
+               [style.width.%]="el.porcentaje"
+               [style.background]="el.meta.gradient"
+               [class.active-winner]="el.esPredominante">
           </div>
-          <div class="nivel-track">
-            <div class="nivel-fill"
-                 [style.width.%]="(asp.valor / 4) * 100"
-                 [class]="'nivel-' + asp.valor">
-            </div>
-          </div>
-          <span class="nivel-numero">{{ asp.valor }}/4</span>
         </div>
+        <span class="element-value-text">{{ el.puntajeTotal }} pts</span>
       </div>
-    </section>
+    </div>
 
+    <!-- Info del nuevo cálculo -->
+    <div class="scoring-info-box">
+      <mat-icon class="info-icon">info</mat-icon>
+      <div class="info-text-content">
+        <strong>¿Cómo se calcula esto?</strong>
+        <p>Cada una de tus respuestas asigna **+3 puntos** a un elemento principal y **+1 punto** a un elemento secundario, según el grado de afinidad de tu elección.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vector de personalidad -->
+  <div class="form-card">
+    <h2 class="card-title">
+      <mat-icon style="vertical-align: middle; margin-right: 8px; color: #a78bfa;">psychology</mat-icon>
+      Tus Aspectos de Personalidad
+    </h2>
+    <p class="section-subtitle-desc">
+      Intensidad detectada para cada uno de los 12 rasgos evaluados.
+    </p>
+
+    <div class="aspects-list-container">
+      <div class="aspect-row-item" *ngFor="let asp of aspectosList">
+        <div class="aspect-text-info">
+          <span class="aspect-name-text">{{ asp.nombre }}</span>
+          <span class="aspect-intensity-label" [class]="'intensity-' + asp.valor">
+            {{ getNivelLabel(asp.valor) }}
+          </span>
+        </div>
+        <div class="aspect-track-line">
+          <div class="aspect-fill-line"
+               [style.width.%]="(asp.valor / 4) * 100"
+               [class]="'fill-level-' + asp.valor">
+          </div>
+        </div>
+        <span class="aspect-fraction-text">{{ asp.valor }}/4</span>
+      </div>
+    </div>
   </div>
 
   <!-- Acción final -->
-  <div class="footer-action">
-    <button class="btn-reiniciar" (click)="reiniciar()">
+  <div class="footer-action-row">
+    <button class="btn-primary" (click)="reiniciar()">
       <mat-icon>refresh</mat-icon>
       Hacer el cuestionario de nuevo
     </button>

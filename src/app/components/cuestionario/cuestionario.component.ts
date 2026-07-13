@@ -129,6 +129,7 @@ export class CuestionarioComponent implements OnInit {
     }));
 
     const payload = { ...datos, respuestas: respuestasArray };
+    console.log(payload);
 
     this.api.submitEnvio(payload).subscribe({
       next: (resultado) => {

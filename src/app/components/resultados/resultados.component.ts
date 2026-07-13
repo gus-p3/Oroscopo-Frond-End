@@ -45,7 +45,7 @@ export class ResultadosComponent implements OnInit {
     this.aspectosList = this.resultado.vectorAspectos ?? [];
     
     // Enriquecer puntajes con porcentaje y metadata visual
-    const maxPuntaje = 15; // teórico
+    const maxPuntaje = 36; // máximo teórico con la nueva regla (12 preguntas * 3 puntos)
     this.elementosList = (this.resultado.puntajesElemento ?? []).map((e: any) => ({
       ...e,
       nombre: e.elementoNombre ?? e.elementoId,
