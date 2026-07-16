@@ -415,3 +415,30 @@
   .step-title { font-size: 1.6rem; }
   .question-text { font-size: 1.25rem; }
 }
+
+@media (max-width: 480px) {
+  .form-card {
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+  .chip-group {
+    gap: 6px;
+  }
+  .chip {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  .option-item {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .option-key {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+  }
+  .option-text {
+    font-size: 0.88rem;
+    padding-top: 2px;
+  }
+}

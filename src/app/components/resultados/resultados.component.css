@@ -343,3 +343,56 @@
     grid-template-columns: 90px 1fr 50px;
   }
 }
+
+@media (max-width: 480px) {
+  .resultado-hero-card {
+    padding: 1.25rem 1rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .elemento-display {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .user-info-row {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .element-bar-row {
+    grid-template-columns: 80px 1fr 45px;
+    gap: 8px;
+  }
+
+  .element-name-label {
+    font-size: 0.82rem;
+  }
+
+  .element-value-text {
+    font-size: 0.78rem;
+  }
+
+  .aspect-row-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f4;
+  }
+
+  .aspect-track-line {
+    height: 6px;
+    width: 100%;
+  }
+
+  .aspect-fraction-text {
+    align-self: flex-end;
+    font-size: 0.75rem;
+    margin-top: -4px;
+  }
+}

@@ -93,8 +93,6 @@ export class CuestionarioComponent implements OnInit {
 
   seleccionarOpcion(preguntaId: string, opcionId: string) {
     this.respuestasForm.get(preguntaId)?.setValue(opcionId);
-    // Avanzar automáticamente después de seleccionar (ligero delay para ver la animación)
-    setTimeout(() => this.siguientePaso(), 350);
   }
 
   siguientePaso() {
