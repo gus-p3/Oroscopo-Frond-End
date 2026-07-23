@@ -32,43 +32,74 @@ Para acceder al Panel de Administración en `http://localhost:4200/admin`:
 
 ---
 
-## 📌 Guía de Integración (Lizeth & Karen)
+## 📌 Guía de Arquitectura e Integración (Lizeth & Karen)
 
 ### 👩‍💻 Instrucciones para Lizeth
 
-#### 1. Envío de Preguntas y Personas (Pasos 1 y 2) hacia los Algoritmos:
-* **Paso 1 (Selección de Personas):** Almacenar los `_id` de las personas seleccionadas en un arreglo `ids: string[]`. Si la opción "Todas las personas" está activa, enviar `ids: []`.
-* **Paso 2 (Selección de Preguntas/Aspectos):** Almacenar los `_id` de las preguntas seleccionadas en un arreglo `questions: string[]`. Si se seleccionan todas, enviar `questions: []`.
-* **Ejecución de Algoritmos:**
-  - **Para K-Means:** Enviar la petición al backend con el cuerpo:
-    ```json
-    {
-      "ids": ["id_persona_1", "id_persona_2"],
-      "questions": ["id_pregunta_1", "id_pregunta_2"],
-      "k": 3,
-      "incluirPCA": true
-    }
-    ```
-  - **Para Clusterización Jerárquica:** Enviar la petición con el cuerpo:
-    ```json
-    {
-      "ids": ["id_persona_1", "id_persona_2"],
-      "questions": ["id_pregunta_1", "id_pregunta_2"],
-      "linkage": "ward",
-      "nClusters": 3,
-      "incluirPCA": true
-    }
-    ```
+#### 1. ¿Cómo pasar la selección de los Pasos 1 y 2 al Componente del Algoritmo?
+
+Actualmente, el componente de cada Algoritmo (ej. `KMeansComponent`) es el encargado de llamar a `AlgorithmService`. Para que reciba las selecciones de personas (Paso 1) y preguntas (Paso 2), se deben usar cualquiera de las siguientes 2 opciones estándar en Angular:
+
+##### **Opción A (Recomendada): Pasar selecciones mediante `@Input()`**
+En el componente del algoritmo (ej. `k-means.component.ts`), declarar `@Input()` para las selecciones:
+```typescript
+@Input() selectedPersonaIds: string[] = [];
+@Input() selectedQuestionIds: string[] = [];
+```
+
+Y en el template del componente contenedor o asistente (ej. `select-algoritm.component.html`):
+```html
+<app-k-means 
+  [selectedPersonaIds]="personaIdsSeleccionadas" 
+  [selectedQuestionIds]="preguntaIdsSeleccionadas"
+  [data]="resultadoKMeans"
+></app-k-means>
+```
+
+Al presionar "Ejecutar Algoritmo", se envía el payload completo al servicio:
+```typescript
+const payload = {
+  k: this.kValue,
+  incluirPCA: true,
+  ids: this.selectedPersonaIds,         // 👈 Arreglo de IDs de Paso 1
+  questions: this.selectedQuestionIds   // 👈 Arreglo de IDs de Paso 2
+};
+
+this.algorithmService.executeKMeans(payload).subscribe({
+  next: (res) => this.resultado = res,
+  error: (err) => console.error(err)
+});
+```
+
+##### **Opción B: Guardar selecciones en un Servicio de Estado Compartido**
+Si las pantallas cambian de ruta en el asistente, se puede inyectar un servicio singleton `SelectionService`:
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class SelectionService {
+  selectedPersonas: string[] = [];
+  selectedQuestions: string[] = [];
+}
+```
+- **Paso 1:** `this.selectionService.selectedPersonas = ['id1', 'id2'];`
+- **Paso 2:** `this.selectionService.selectedQuestions = ['q1', 'q2'];`
+- **Paso 3 (Algoritmo):** `this.algorithmService.executeKMeans({ ids: this.selectionService.selectedPersonas, questions: this.selectionService.selectedQuestions, k: 3 })`.
+
+---
 
 #### 2. Registro y Control de Bitácoras (Logs de Actividad):
-* Al ejecutar cualquiera de los dos algoritmos, registrar una entrada de bitácora con los siguientes campos:
-  - `fecha`: Marca de tiempo (`new Date()`).
-  - `algoritmo`: `'K-Means'` o `'Clusterización Jerárquica'`.
-  - `personasEnviadas`: Arreglo de IDs o total enviado (`ids.length`).
-  - `preguntasEnviadas`: Arreglo de preguntas o total enviado (`questions.length`).
-  - `parametros`: Objeto con los parámetros usados (ej. `{ k: 3, linkage: 'ward', pca: true }`).
-  - `duracionMs`: Tiempo de respuesta de la petición HTTP.
-* Renderizar esta información en una tabla/panel de bitácoras para auditar el historial de ejecuciones.
+* Al recibir la respuesta del algoritmo, registrar el evento de bitácora:
+  ```typescript
+  const logBitacora = {
+    fecha: new Date(),
+    algoritmo: 'K-Means',
+    totalPersonas: payload.ids.length || 'Todas',
+    totalPreguntas: payload.questions.length || 'Todas',
+    parametros: { k: payload.k, pca: true },
+    tiempoRespuestaMs: Date.now() - inicioMs
+  };
+  // Guardar logBitacora en la lista de bitácoras del estado
+  ```
 
 ---
 

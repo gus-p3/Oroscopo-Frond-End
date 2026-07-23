@@ -6,10 +6,16 @@ import { environment } from '../../environments/environment';
 export interface KMeansParams {
   k: number;
   incluirPCA?: boolean;
+  ids?: string[];
+  questions?: string[];
 }
 
 export interface HierarchicalParams {
   metodoEnlace: 'ward' | 'average' | 'complete';
+  nClusters?: number;
+  incluirPCA?: boolean;
+  ids?: string[];
+  questions?: string[];
 }
 
 export interface PersonaCluster {
