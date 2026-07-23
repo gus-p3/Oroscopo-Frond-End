@@ -1,1 +1,37 @@
-<p>select-algoritm works!</p>
+<div class="algorithms-section">
+  <div class="header-section">
+    <h2 class="title">Selecciona un Algoritmo</h2>
+    <p class="subtitle">Elige el método de agrupamiento que deseas ejecutar</p>
+  </div>
+
+  <div class="algorithms-grid">
+    @for (item of algoritmItems; track item.id) {
+      <div 
+        class="algorithm-card" 
+        [class.selected]="item.id === selectedId"
+        (click)="select(item)"
+      >
+        <div class="card-header">
+          <div class="icon-box">
+            @if (item.id === 'kmeans') {
+              <span>🧩</span>
+            } @else {
+              <span>🌳</span>
+            }
+          </div>
+          @if (item.badge) {
+            <span class="badge">{{ item.badge }}</span>
+          }
+        </div>
+        <h3 class="card-title">{{ item.nombre }}</h3>
+        <p class="card-description">{{ item.descripcion }}</p>
+        <div class="card-footer">
+          <span class="action-text">
+            {{ item.id === selectedId ? 'Seleccionado' : 'Seleccionar' }}
+          </span>
+          <span class="arrow-icon">→</span>
+        </div>
+      </div>
+    }
+  </div>
+</div>

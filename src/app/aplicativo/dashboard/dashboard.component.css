@@ -1,0 +1,384 @@
+.dashboard-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  max-width: 1200px;
+  width: 90%;
+  margin: 25px auto;
+}
+
+/* Disposición Vertical para Fase 3 */
+.phase-vertical-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  width: 100%;
+}
+
+.top-algorithms-section {
+  width: 100%;
+}
+
+.middle-config-section {
+  width: 100%;
+}
+
+/* Tarjeta de Configuración (Liquid Glass) */
+.config-card {
+  padding: 24px;
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.88),
+    rgba(255, 255, 255, 0.65)
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  
+  box-shadow: 
+    0 6px 20px -4px rgba(6, 182, 212, 0.08),
+    0 2px 8px 0 rgba(2, 132, 199, 0.05),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.config-icon {
+  font-size: 26px;
+}
+
+.config-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1E1B4B;
+  margin: 0 0 2px 0;
+}
+
+.config-subtitle {
+  font-size: 13px;
+  color: #64748B;
+  margin: 0;
+}
+
+/* Formulario */
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-control {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  color: #1E1B4B;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: var(--primary-purple, #7C3AED);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  background: #ffffff;
+}
+
+.checkbox-group {
+  margin-top: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.form-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-purple, #7C3AED);
+  cursor: pointer;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+/* Botón Enviar */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-submit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary-purple, #7C3AED), #5B21B6);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+}
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Banner de Error */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #DC2626;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Tarjetas de Fases */
+.phase-card {
+  padding: 30px;
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.7)
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 
+    0 8px 25px -4px rgba(6, 182, 212, 0.08),
+    0 2px 8px 0 rgba(2, 132, 199, 0.05),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.phase-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1E1B4B;
+  margin: 0 0 6px 0;
+}
+
+.phase-header p {
+  font-size: 14px;
+  color: #64748B;
+  margin: 0;
+}
+
+.phase-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.info-pill {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  color: #0369A1;
+  font-size: 13.5px;
+}
+
+.btn-next {
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary-purple, #7C3AED), #5B21B6);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+  transition: all 0.3s ease;
+}
+
+.btn-next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+}
+
+.full-results-wrapper {
+  margin-top: 30px;
+  width: 100%;
+}
+
+/* Resultados Jerárquicos */
+.hierarchical-card {
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(245, 243, 255, 0.8));
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.08);
+}
+
+/* Método del Codo (Elbow Method) */
+.label-with-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.btn-elbow-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  background: rgba(124, 58, 237, 0.08);
+  color: var(--primary-purple, #7C3AED);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-elbow-trigger:hover:not(:disabled) {
+  background: var(--primary-purple, #7C3AED);
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.25);
+}
+
+.btn-spinner-sm {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(124, 58, 237, 0.3);
+  border-top-color: var(--primary-purple, #7C3AED);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.elbow-card {
+  margin-top: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(245, 243, 255, 0.85)
+  );
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.08);
+}
+
+.elbow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.elbow-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1E1B4B;
+}
+
+.elbow-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #0284C7;
+  background: rgba(6, 182, 212, 0.12);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.elbow-svg-wrapper {
+  width: 100%;
+}
+
+.elbow-svg {
+  width: 100%;
+  height: auto;
+  max-height: 180px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+}
+
+.elbow-dot {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.elbow-dot:hover {
+  r: 10;
+  stroke: #ffffff;
+  stroke-width: 2px;
+}
+
+.elbow-label-text {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #64748B;
+  user-select: none;
+}
+
+.elbow-label-text.selected-text {
+  fill: #0284C7;
+  font-weight: 800;
+}
+

@@ -1,0 +1,110 @@
+<!-- Cabecera del Panel Lateral -->
+<div class="drawer-header">
+  <div class="drawer-title-group">
+    <span class="drawer-subtitle">Detalles de Personalidad</span>
+    <h3 class="drawer-user-name">{{ datosUsuario?.nombre || 'Cargando...' }}</h3>
+  </div>
+  <button class="btn-close-drawer" (click)="closePanel()" title="Cerrar panel">✕</button>
+</div>
+
+<!-- Estado de Carga -->
+@if (loading) {
+  <div class="drawer-loading">
+    <div class="drawer-spinner"></div>
+    <p>Cargando detalles de respuestas...</p>
+  </div>
+}
+
+<!-- Mensaje de Error -->
+@if (errorMessage && !loading) {
+  <div class="drawer-error">
+    <span>⚠️ {{ errorMessage }}</span>
+  </div>
+}
+
+<!-- Contenido de los Detalles -->
+@if (datosUsuario && !loading) {
+  <div class="drawer-body">
+
+    <!-- Card de Elemento Ganador -->
+    <div class="resultado-hero-card" [style.border-top-color]="ganadorMeta?.color">
+      <span class="resultado-eyebrow">Elemento Predominante</span>
+      <div class="elemento-display">
+        <span class="elemento-emoji-large" [style.background]="ganadorMeta?.gradient">
+          {{ ganadorMeta?.emoji ?? '✦' }}
+        </span>
+        <div>
+          <h2 class="elemento-title-name" [style.color]="ganadorMeta?.color">
+            {{ elementoGanador?.nombre ?? datosUsuario?.elementoNombre ?? 'Sin evaluar' }}
+          </h2>
+          <p class="elemento-meta-details">
+            Signo Astrológico: <strong>{{ datosUsuario?.signoZodiacal || 'Desconocido' }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <div class="user-info-row">
+        <div class="info-badge">
+          <span>👤 Género: {{ datosUsuario?.genero || 'N/A' }}</span>
+        </div>
+        <div class="info-badge">
+          <span>⭐ Elemento Signo: {{ datosUsuario?.elementoSigno || 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Balance de Elementos -->
+    <div class="detail-card">
+      <h4 class="card-title">📊 Balance de Elementos (Cuestionario)</h4>
+      <p class="section-subtitle-desc">Puntaje obtenido para cada uno de los 4 elementos:</p>
+
+      <div class="bar-chart-container">
+        @for (el of elementosList; track el.nombre) {
+          <div class="element-bar-row">
+            <div class="element-info-label">
+              <span class="element-emoji-label">{{ el.meta.emoji }}</span>
+              <span class="element-name-label" [style.color]="el.meta.color">{{ el.nombre }}</span>
+            </div>
+            <div class="element-track-bar">
+              <div 
+                class="element-fill-bar"
+                [style.width.%]="el.porcentaje"
+                [style.background]="el.meta.gradient"
+                [class.active-winner]="el.esPredominante"
+              ></div>
+            </div>
+            <span class="element-value-text"><strong>{{ el.puntajeTotal }}</strong> pts</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Aspectos de Personalidad -->
+    <div class="detail-card">
+      <h4 class="card-title">🧠 Aspectos de Personalidad Evaluados</h4>
+      <p class="section-subtitle-desc">Intensidad detectada para los rasgos del usuario:</p>
+
+      <div class="aspects-list-container">
+        @for (asp of aspectosList; track asp[0]) {
+          <div class="aspect-row-item">
+            <div class="aspect-text-info">
+              <span class="aspect-name-text">{{ asp[0] }}</span>
+              <span class="aspect-intensity-label" [class]="'intensity-' + asp[1]">
+                {{ getNivelLabel(asp[1]) }}
+              </span>
+            </div>
+            <div class="aspect-track-line">
+              <div 
+                class="aspect-fill-line"
+                [style.width.%]="(asp[1] / 4) * 100"
+                [class]="'fill-level-' + asp[1]"
+              ></div>
+            </div>
+            <span class="aspect-fraction-text">{{ asp[1] }}/4</span>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+}

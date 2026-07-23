@@ -1,0 +1,260 @@
+<div class="dashboard-container">
+  <app-nav-bar 
+    [activePhase]="currentPhase" 
+    (phaseSelected)="onPhaseChange($event)">
+  </app-nav-bar>
+
+  <main class="main-content">
+    
+    <!-- FASE 1: SELECCIÓN DE PERSONAS -->
+    @if (currentPhase === 'fase1') {
+      <div class="phase-card">
+        <div class="phase-header">
+          <h2>👥 Fase 1: Selección de Personas</h2>
+          <p>Selecciona o filtra los registros de personas almacenados en la base de datos para incluirlos en el análisis de agrupamiento.</p>
+        </div>
+        <div class="phase-body">
+          <div class="info-pill">
+            <span>ℹ️ Por defecto se incluirán automáticamente todas las personas registradas en la base de datos si no desmarcas ninguna.</span>
+          </div>
+          <button class="btn-next" (click)="onPhaseChange('fase2')">Continuar a Selección de Preguntas →</button>
+        </div>
+      </div>
+    }
+
+    <!-- FASE 2: SELECCIÓN DE PREGUNTAS -->
+    @if (currentPhase === 'fase2') {
+      <div class="phase-card">
+        <div class="phase-header">
+          <h2>❓ Fase 2: Selección de Preguntas</h2>
+          <p>Selecciona cuáles preguntas o aspectos del cuestionario zodiacal formarán las dimensiones del dataset.</p>
+        </div>
+        <div class="phase-body">
+          <div class="info-pill">
+            <span>ℹ️ Por defecto se utilizan todas las preguntas activas del cuestionario.</span>
+          </div>
+          <button class="btn-next" (click)="onPhaseChange('fase3')">Continuar a Selección de Algoritmo →</button>
+        </div>
+      </div>
+    }
+
+    <!-- FASE 3: SELECCIÓN DE ALGORITMO Y CONFIGURACIÓN -->
+    @if (currentPhase === 'fase3') {
+      <div class="phase-vertical-flow">
+        
+        <!-- ARRIBA: Selección de Algoritmos (2 Cards en paralelo) -->
+        <section class="top-algorithms-section">
+          <app-select-algoritm 
+            [selectedId]="selectedAlgorithmId"
+            (selectAlgorithm)="onAlgorithmSelected($event)">
+          </app-select-algoritm>
+        </section>
+
+        <!-- ABAJO DE CARDS: Formulario de Configuración -->
+        <section class="middle-config-section">
+          <div class="config-card">
+            <div class="card-header">
+              <span class="config-icon">⚙️</span>
+              <div>
+                <h2 class="config-title">Configuración: {{ selectedAlgorithmName }}</h2>
+                <p class="config-subtitle">Ajusta los parámetros que se enviarán al backend</p>
+              </div>
+            </div>
+
+            <!-- Formulario K-Means con Método del Codo -->
+            @if (selectedAlgorithmId === 'kmeans') {
+              <div class="form-grid">
+                <div class="form-group">
+                  <div class="label-with-btn">
+                    <label for="kValue" class="form-label">Número de Clusters (K)</label>
+                    <button 
+                      type="button" 
+                      class="btn-elbow-trigger" 
+                      (click)="calculateElbow()"
+                      [disabled]="isCalculatingElbow"
+                    >
+                      @if (isCalculatingElbow) {
+                        <span class="btn-spinner-sm"></span>
+                        <span>Calculando...</span>
+                      } @else {
+                        <span>📉 Método del Codo</span>
+                      }
+                    </button>
+                  </div>
+                  <input 
+                    type="number" 
+                    id="kValue" 
+                    class="form-control" 
+                    [(ngModel)]="kValue" 
+                    min="2" 
+                    max="10" 
+                    placeholder="Ej. 3"
+                  />
+                  <span class="form-hint">Mínimo 2 clusters. Define la cantidad de grupos a formar.</span>
+                </div>
+
+                <!-- Gráfica SVG de la Curva del Codo (Elbow Method) -->
+                @if (elbowData) {
+                  <div class="elbow-card">
+                    <div class="elbow-header">
+                      <span class="elbow-title">📉 Curva del Codo (Inercia WSS vs K)</span>
+                      <span class="elbow-badge">💡 Haz clic en un punto para fijar K</span>
+                    </div>
+
+                    <div class="elbow-svg-wrapper">
+                      <svg viewBox="0 0 500 200" class="elbow-svg">
+                        <line x1="35" y1="165" x2="465" y2="165" stroke="rgba(0,0,0,0.1)" stroke-dasharray="4" />
+                        <line x1="35" y1="20" x2="35" y2="165" stroke="rgba(0,0,0,0.1)" stroke-dasharray="4" />
+                        
+                        <polyline 
+                          [attr.points]="elbowPolylineString" 
+                          fill="none" 
+                          stroke="var(--primary-purple, #7C3AED)" 
+                          stroke-width="3" 
+                        />
+
+                        @for (pt of elbowSvgPoints; track pt.k) {
+                          <circle 
+                            [attr.cx]="pt.cx" 
+                            [attr.cy]="pt.cy" 
+                            r="7" 
+                            [attr.fill]="pt.k === kValue ? '#06B6D4' : 'var(--primary-purple, #7C3AED)'" 
+                            class="elbow-dot"
+                            (click)="setKFromElbow(pt.k)"
+                          >
+                            <title>K = {{ pt.k }} (Inercia: {{ pt.inercia | number:'1.1-1' }}) - Clic para elegir</title>
+                          </circle>
+                          <text 
+                            [attr.x]="pt.cx" 
+                            [attr.y]="pt.cy - 12" 
+                            text-anchor="middle" 
+                            class="elbow-label-text"
+                            [class.selected-text]="pt.k === kValue"
+                          >
+                            K={{ pt.k }}
+                          </text>
+                        }
+                      </svg>
+                    </div>
+                  </div>
+                }
+
+                <div class="form-group checkbox-group">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="incluirPCA" 
+                      class="form-checkbox"
+                    />
+                    <span>Incluir componentes PCA (2D)</span>
+                  </label>
+                  <span class="form-hint">Genera coordenadas 2D para graficar la distribución.</span>
+                </div>
+              </div>
+            }
+
+            <!-- Formulario Clusterización Jerárquica -->
+            @if (selectedAlgorithmId === 'jerarquico') {
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="metodoEnlace" class="form-label">Método de Enlace (Linkage)</label>
+                  <select id="metodoEnlace" class="form-control" [(ngModel)]="metodoEnlace">
+                    <option value="ward">Ward (Minimiza la varianza)</option>
+                    <option value="average">Average (Promedio de distancias)</option>
+                    <option value="complete">Complete (Máxima distancia)</option>
+                  </select>
+                  <span class="form-hint">Criterio utilizado para calcular la distancia entre clusters.</span>
+                </div>
+              </div>
+            }
+
+            <!-- Botón de Envío al Backend -->
+            <div class="form-actions">
+              <button 
+                class="btn-submit" 
+                [disabled]="isLoading" 
+                (click)="executeAlgorithm()"
+              >
+                @if (isLoading) {
+                  <span class="btn-spinner"></span>
+                  <span>Procesando en Backend...</span>
+                } @else {
+                  <span>🚀 Enviar y Ver Resultados</span>
+                }
+              </button>
+            </div>
+          </div>
+
+          <!-- Banner de Error si Ocurre -->
+          @if (errorMessage) {
+            <div class="error-banner">
+              <span class="error-icon">⚠️</span>
+              <span>{{ errorMessage }}</span>
+            </div>
+          }
+        </section>
+
+        <!-- ABAJO DEL TODO: SELECCIÓN DE RESULTADOS Y GRÁFICAS (FULL WIDTH) -->
+        <div class="full-results-wrapper">
+          @if (selectedAlgorithmId === 'kmeans') {
+            <app-k-means 
+              [data]="kmeansData" 
+              [loading]="isLoading">
+            </app-k-means>
+          }
+
+          @if (selectedAlgorithmId === 'jerarquico' && hierarchicalData) {
+            <div class="hierarchical-card">
+              <div class="results-header">
+                <span class="success-badge">✅ Clusterización Jerárquica Completada</span>
+                <h3 class="results-title">Resultados Jerárquicos</h3>
+                <p class="results-msg">{{ hierarchicalData.message }}</p>
+              </div>
+              <p><strong>Método de Enlace:</strong> {{ hierarchicalData.result.metodoEnlace || metodoEnlace }}</p>
+              <p><strong>Total de Registros Enlazados:</strong> {{ hierarchicalData.result.labels?.length || 0 }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- FASE 4: RESULTADOS -->
+    @if (currentPhase === 'fase4') {
+      <div class="phase-card">
+        <div class="phase-header">
+          <h2>📊 Fase 4: Resultados de Minería de Datos</h2>
+          <p>Métricas y agrupación generadas por el algoritmo ejecutado.</p>
+        </div>
+
+        @if (selectedAlgorithmId === 'kmeans') {
+          <app-k-means 
+            [data]="kmeansData" 
+            [loading]="isLoading">
+          </app-k-means>
+        }
+
+        @if (selectedAlgorithmId === 'jerarquico') {
+          <div class="results-container">
+            @if (hierarchicalData) {
+              <div class="results-header">
+                <span class="success-badge">✅ Clusterización Completada</span>
+                <h3 class="results-title">Resultados Jerárquicos</h3>
+                <p class="results-msg">{{ hierarchicalData.message }}</p>
+              </div>
+              <div class="hierarchical-card">
+                <p><strong>Método de Enlace:</strong> {{ hierarchicalData.result.metodoEnlace || metodoEnlace }}</p>
+                <p><strong>Total de Registros Enlazados:</strong> {{ hierarchicalData.result.labels?.length || 0 }}</p>
+              </div>
+            } @else {
+              <div class="empty-results">
+                <span class="empty-icon">🌳</span>
+                <p>Aún no has ejecutado el algoritmo jerárquico. Ve a la <a href="javascript:void(0)" (click)="onPhaseChange('fase3')">Fase 3</a> para configurarlo y ejecutarlo.</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </main>
+</div>

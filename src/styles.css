@@ -1,4 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
-body {
-  background-color: #f8fafc;
+:root {
+  --bg-cosmic: #0F0C1B;
+  --bg-card: rgba(255, 255, 255, 0.06);
+  --primary-purple: #7C3AED;
+  --accent-cyan: #06B6D4;
+  --star-gold: #F59E0B;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --glass-border: rgba(255, 255, 255, 0.12);
 }
+
