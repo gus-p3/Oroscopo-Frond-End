@@ -1,10 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavBarComponent } from '../nav-bar/nav-bar.component';
 import { SelectAlgoritmComponent, AlgoritmItem } from '../components/select-algoritm/select-algoritm.component';
 import { KMeansComponent } from '../components/k-means/k-means.component';
 import { AlgorithmService, KMeansResultResponse, HierarchicalResultResponse, ElbowResultResponse } from '../../services/algorithm.service';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,8 +20,9 @@ import { AlgorithmService, KMeansResultResponse, HierarchicalResultResponse, Elb
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   private algorithmService = inject(AlgorithmService);
+  private apiService = inject(ApiService);
 
   // Fase activa en el dashboard (fase1, fase2, fase3, fase4)
   currentPhase: string = 'fase3';
@@ -47,6 +49,126 @@ export class DashboardComponent {
   isCalculatingElbow: boolean = false;
   elbowData: ElbowResultResponse | null = null;
 
+  // Listas de datos para selección
+  personas: any[] = [];
+  personasFiltradas: any[] = [];
+  preguntas: any[] = [];
+
+  // Catálogos para filtrado
+  signos: any[] = [];
+
+  // Filtros de personas en Fase 1
+  searchPersona: string = '';
+  filterPersonaGender: string = 'all';
+  filterPersonaSign: string = 'all';
+
+  // IDs Seleccionados de Pasos 1 y 2
+  personaIdsSeleccionadas: string[] = [];
+  preguntaIdsSeleccionadas: string[] = [];
+
+  // Historial de Bitácoras de Actividad (Estado local del frontend)
+  bitacoraLogs: any[] = [];
+
+  ngOnInit() {
+    // Cargar catálogos para filtros
+    this.apiService.getCatalogos().subscribe({
+      next: (res) => {
+        this.signos = res.signos || [];
+      }
+    });
+
+    // Cargar todas las personas registradas con puntajes
+    this.apiService.getPersonas(1000, 0).subscribe({
+      next: (res) => {
+        this.personas = res.personas || [];
+        this.personasFiltradas = [...this.personas];
+        // Seleccionar todas por defecto
+        this.personaIdsSeleccionadas = this.personas.map(p => p._id);
+      },
+      error: (err) => {
+        console.error('Error al cargar personas:', err);
+      }
+    });
+
+    // Cargar las preguntas del cuestionario
+    this.apiService.getCuestionario().subscribe({
+      next: (res) => {
+        this.preguntas = res || [];
+        // Seleccionar todas por defecto
+        this.preguntaIdsSeleccionadas = this.preguntas.map(q => q._id);
+      },
+      error: (err) => {
+        console.error('Error al cargar preguntas:', err);
+      }
+    });
+  }
+
+  // Filtrado de personas en Fase 1
+  filtrarPersonas() {
+    this.personasFiltradas = this.personas.filter(p => {
+      const matchesSearch = !this.searchPersona || p.nombre.toLowerCase().includes(this.searchPersona.toLowerCase());
+      const matchesGender = this.filterPersonaGender === 'all' || p.genero === this.filterPersonaGender;
+      const matchesSign = this.filterPersonaSign === 'all' || p.signoZodiacal === this.filterPersonaSign;
+      return matchesSearch && matchesGender && matchesSign;
+    });
+  }
+
+  isPersonaSelected(id: string): boolean {
+    return this.personaIdsSeleccionadas.includes(id);
+  }
+
+  togglePersonaSelection(id: string) {
+    const idx = this.personaIdsSeleccionadas.indexOf(id);
+    if (idx > -1) {
+      this.personaIdsSeleccionadas.splice(idx, 1);
+    } else {
+      this.personaIdsSeleccionadas.push(id);
+    }
+  }
+
+  isAllVisiblePersonasSelected(): boolean {
+    if (this.personasFiltradas.length === 0) return false;
+    return this.personasFiltradas.every(p => this.isPersonaSelected(p._id));
+  }
+
+  toggleAllVisiblePersonas() {
+    const visibleIds = this.personasFiltradas.map(p => p._id);
+    const allSelected = this.isAllVisiblePersonasSelected();
+    
+    if (allSelected) {
+      // Quitar todas las visibles
+      this.personaIdsSeleccionadas = this.personaIdsSeleccionadas.filter(id => !visibleIds.includes(id));
+    } else {
+      // Agregar todas las visibles
+      visibleIds.forEach(id => {
+        if (!this.personaIdsSeleccionadas.includes(id)) {
+          this.personaIdsSeleccionadas.push(id);
+        }
+      });
+    }
+  }
+
+  isQuestionSelected(id: string): boolean {
+    return this.preguntaIdsSeleccionadas.includes(id);
+  }
+
+  toggleQuestionSelection(id: string) {
+    const idx = this.preguntaIdsSeleccionadas.indexOf(id);
+    if (idx > -1) {
+      this.preguntaIdsSeleccionadas.splice(idx, 1);
+    } else {
+      this.preguntaIdsSeleccionadas.push(id);
+    }
+  }
+
+  toggleAllQuestions() {
+    if (this.preguntaIdsSeleccionadas.length === this.preguntas.length) {
+      this.preguntaIdsSeleccionadas = [];
+    } else {
+      this.preguntaIdsSeleccionadas = this.preguntas.map(q => q._id);
+    }
+  }
+
   onPhaseChange(phaseId: string) {
     this.currentPhase = phaseId;
   }
@@ -60,7 +182,9 @@ export class DashboardComponent {
   calculateElbow() {
     this.isCalculatingElbow = true;
     this.errorMessage = '';
-    this.algorithmService.executeElbow(10).subscribe({
+    
+    // Pasar los IDs de personas y preguntas seleccionadas para que el cálculo coincida
+    this.algorithmService.executeElbow(10, this.personaIdsSeleccionadas, this.preguntaIdsSeleccionadas).subscribe({
       next: (res) => {
         this.elbowData = res;
         this.isCalculatingElbow = false;
@@ -113,15 +237,31 @@ export class DashboardComponent {
   executeAlgorithm() {
     this.isLoading = true;
     this.errorMessage = '';
+    const inicioMs = Date.now();
 
     if (this.selectedAlgorithmId === 'kmeans') {
-      this.algorithmService.executeKMeans({
+      const payload = {
         k: Number(this.kValue),
-        incluirPCA: this.incluirPCA
-      }).subscribe({
+        incluirPCA: this.incluirPCA,
+        ids: this.personaIdsSeleccionadas,
+        questions: this.preguntaIdsSeleccionadas
+      };
+
+      this.algorithmService.executeKMeans(payload).subscribe({
         next: (res) => {
           this.kmeansData = res;
           this.isLoading = false;
+
+          // Registrar el log de bitácora de actividad en el estado
+          const logBitacora = {
+            fecha: new Date(),
+            algoritmo: 'K-Means',
+            totalPersonas: payload.ids.length || this.personas.length || 'Todas',
+            totalPreguntas: payload.questions.length || this.preguntas.length || 'Todas',
+            parametros: { k: payload.k, pca: payload.incluirPCA },
+            tiempoRespuestaMs: Date.now() - inicioMs
+          };
+          this.bitacoraLogs.unshift(logBitacora);
         },
         error: (err) => {
           this.errorMessage = err?.error?.error || err?.error?.message || 'Error al ejecutar K-Means en el backend.';
@@ -129,12 +269,27 @@ export class DashboardComponent {
         }
       });
     } else if (this.selectedAlgorithmId === 'jerarquico') {
-      this.algorithmService.executeHierarchical({
-        metodoEnlace: this.metodoEnlace
-      }).subscribe({
+      const payload = {
+        metodoEnlace: this.metodoEnlace,
+        ids: this.personaIdsSeleccionadas,
+        questions: this.preguntaIdsSeleccionadas
+      };
+
+      this.algorithmService.executeHierarchical(payload).subscribe({
         next: (res) => {
           this.hierarchicalData = res;
           this.isLoading = false;
+
+          // Registrar el log de bitácora de actividad en el estado
+          const logBitacora = {
+            fecha: new Date(),
+            algoritmo: 'Clusterización Jerárquica',
+            totalPersonas: payload.ids.length || this.personas.length || 'Todas',
+            totalPreguntas: payload.questions.length || this.preguntas.length || 'Todas',
+            parametros: { metodoEnlace: payload.metodoEnlace },
+            tiempoRespuestaMs: Date.now() - inicioMs
+          };
+          this.bitacoraLogs.unshift(logBitacora);
         },
         error: (err) => {
           this.errorMessage = err?.error?.error || err?.error?.message || 'Error al ejecutar la Clusterización Jerárquica.';

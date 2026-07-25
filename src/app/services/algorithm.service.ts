@@ -82,7 +82,7 @@ export class AlgorithmService {
     return this.http.post<HierarchicalResultResponse>(`${this.apiUrl}/jerarquico`, params);
   }
 
-  executeElbow(kMax: number = 10): Observable<ElbowResultResponse> {
-    return this.http.post<ElbowResultResponse>(`${this.apiUrl}/elbow`, { kMax });
+  executeElbow(kMax: number = 10, ids?: string[], questions?: string[]): Observable<ElbowResultResponse> {
+    return this.http.post<ElbowResultResponse>(`${this.apiUrl}/elbow`, { kMax, ids, questions });
   }
 }

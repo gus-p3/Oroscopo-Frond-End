@@ -382,3 +382,297 @@
   font-weight: 800;
 }
 
+/* Nuevos Estilos para Selección y Bitácora */
+.flex-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.selection-status-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5b21b6;
+  background: rgba(139, 92, 246, 0.12);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.selection-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.filter-input-group {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.filter-control {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 13.5px;
+  color: #1e1b4b;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.filter-control:focus {
+  border-color: var(--primary-purple, #7c3aed);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  background: #ffffff;
+}
+
+.table-container-glass {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  margin-bottom: 12px;
+}
+
+.selection-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.selection-table th {
+  padding: 12px 16px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.selection-table td {
+  padding: 12px 16px;
+  color: #1e1b4b;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.selection-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.selection-table tbody tr:hover {
+  background-color: rgba(124, 58, 237, 0.04);
+}
+
+.selection-table tbody tr.row-selected {
+  background-color: rgba(124, 58, 237, 0.08);
+}
+
+.td-checkbox {
+  width: 48px;
+  text-align: center;
+}
+
+.selection-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary-purple, #7c3aed);
+  cursor: pointer;
+}
+
+.td-name {
+  font-weight: 600;
+}
+
+.td-empty {
+  text-align: center;
+  padding: 30px !important;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Badges para Elementos */
+.badge-elemento {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge-fuego { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+.badge-agua { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
+.badge-tierra { background: rgba(16, 185, 129, 0.15); color: #059669; }
+.badge-aire { background: rgba(6, 182, 212, 0.15); color: #0891b2; }
+
+.phase-actions-footer {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 15px;
+}
+
+/* Fase 2 Preguntas Grid */
+.info-pill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 8px;
+}
+
+.btn-toggle-all-questions {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  background: transparent;
+  color: var(--primary-purple, #7c3aed);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-all-questions:hover {
+  background: var(--primary-purple, #7c3aed);
+  color: #ffffff;
+}
+
+.questions-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.question-selection-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.25s ease;
+}
+
+.question-selection-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.2);
+}
+
+.question-selection-card.card-selected {
+  background: rgba(124, 58, 237, 0.07);
+  border-color: rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.08);
+}
+
+.question-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.question-number {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--primary-purple, #7c3aed);
+  background: rgba(124, 58, 237, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.question-text {
+  font-size: 13px;
+  color: #1e1b4b;
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.aspect-label {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: auto;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  padding-top: 6px;
+}
+
+/* Estilos de Bitacora */
+.bitacora-section {
+  width: 100%;
+}
+
+.bitacora-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(250, 245, 255, 0.75));
+  border-color: rgba(124, 58, 237, 0.15);
+}
+
+.bitacora-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.bitacora-table th {
+  padding: 12px 14px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.bitacora-table td {
+  padding: 12px 14px;
+  color: #334155;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.algo-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(6, 182, 212, 0.12);
+  color: #0891b2;
+  font-weight: 700;
+  font-size: 11.5px;
+}
+
+.params-pill {
+  font-family: monospace;
+  font-size: 11.5px;
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.time-text {
+  color: #059669;
+}
+

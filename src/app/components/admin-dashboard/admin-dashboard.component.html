@@ -15,13 +15,17 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <button class="btn-clustering" routerLink="/clustering" style="margin-right: 8px;">
+          <mat-icon>analytics</mat-icon>
+          Minería & Clustering
+        </button>
+        <button class="btn-export" (click)="exportarCsv()" style="margin-right: 8px;">
+          <mat-icon>download</mat-icon>
+          Exportar CSV
+        </button>
         <button class="btn-logout" (click)="logout()">
           <mat-icon>logout</mat-icon>
           Cerrar sesión
-        </button>
-        <button class="btn-export" (click)="exportarCsv()">
-          <mat-icon>download</mat-icon>
-          Exportar CSV
         </button>
       </div>
     </header>

@@ -9,15 +9,104 @@
     <!-- FASE 1: SELECCIÓN DE PERSONAS -->
     @if (currentPhase === 'fase1') {
       <div class="phase-card">
-        <div class="phase-header">
-          <h2>👥 Fase 1: Selección de Personas</h2>
-          <p>Selecciona o filtra los registros de personas almacenados en la base de datos para incluirlos en el análisis de agrupamiento.</p>
-        </div>
-        <div class="phase-body">
-          <div class="info-pill">
-            <span>ℹ️ Por defecto se incluirán automáticamente todas las personas registradas en la base de datos si no desmarcas ninguna.</span>
+        <div class="phase-header flex-header">
+          <div>
+            <h2>👥 Fase 1: Selección de Personas</h2>
+            <p>Selecciona o filtra los registros de personas almacenados en la base de datos para incluirlos en el análisis de agrupamiento.</p>
           </div>
-          <button class="btn-next" (click)="onPhaseChange('fase2')">Continuar a Selección de Preguntas →</button>
+          <div class="selection-status-badge">
+            Seleccionadas: <strong>{{ personaIdsSeleccionadas.length }}</strong> / {{ personas.length }}
+          </div>
+        </div>
+
+        <div class="phase-body">
+          <!-- Filtros de Personas -->
+          <div class="selection-filters-row">
+            <div class="filter-input-group">
+              <label class="filter-label">Buscar Nombre</label>
+              <input 
+                type="text" 
+                class="filter-control" 
+                placeholder="Nombre de la persona..." 
+                [(ngModel)]="searchPersona" 
+                (ngModelChange)="filtrarPersonas()"
+              />
+            </div>
+            
+            <div class="filter-input-group">
+              <label class="filter-label">Género</label>
+              <select class="filter-control" [(ngModel)]="filterPersonaGender" (change)="filtrarPersonas()">
+                <option value="all">Todos</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Otro">Otro</option>
+                <option value="Prefiero no decir">Prefiero no decir</option>
+              </select>
+            </div>
+
+            <div class="filter-input-group">
+              <label class="filter-label">Signo Zodiacal</label>
+              <select class="filter-control" [(ngModel)]="filterPersonaSign" (change)="filtrarPersonas()">
+                <option value="all">Todos</option>
+                @for (s of signos; track s._id) {
+                  <option [value]="s.nombre">{{ s.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- Tabla de Personas -->
+          <div class="table-container-glass">
+            <table class="selection-table">
+              <thead>
+                <tr>
+                  <th class="td-checkbox">
+                    <input 
+                      type="checkbox" 
+                      class="selection-checkbox" 
+                      [checked]="isAllVisiblePersonasSelected()" 
+                      (change)="toggleAllVisiblePersonas()" 
+                    />
+                  </th>
+                  <th>Nombre</th>
+                  <th>Género</th>
+                  <th>Signo Zodiacal</th>
+                  <th>Elemento Signo</th>
+                  <th>Elemento Predominante</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of personasFiltradas; track p._id) {
+                  <tr 
+                    [class.row-selected]="isPersonaSelected(p._id)"
+                    (click)="togglePersonaSelection(p._id)"
+                  >
+                    <td class="td-checkbox" (click)="$event.stopPropagation()">
+                      <input 
+                        type="checkbox" 
+                        class="selection-checkbox" 
+                        [checked]="isPersonaSelected(p._id)" 
+                        (change)="togglePersonaSelection(p._id)"
+                      />
+                    </td>
+                    <td class="td-name">{{ p.nombre }}</td>
+                    <td>{{ p.genero }}</td>
+                    <td>{{ p.signoZodiacal }}</td>
+                    <td><span class="badge-elemento badge-{{ p.elementoSigno | lowercase }}">{{ p.elementoSigno }}</span></td>
+                    <td><span class="badge-elemento badge-{{ p.elementoPredominante | lowercase }}">{{ p.elementoPredominante }}</span></td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="td-empty">No se encontraron personas con los filtros seleccionados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="phase-actions-footer">
+            <button class="btn-next" (click)="onPhaseChange('fase2')">Continuar a Selección de Preguntas →</button>
+          </div>
         </div>
       </div>
     }
@@ -25,15 +114,53 @@
     <!-- FASE 2: SELECCIÓN DE PREGUNTAS -->
     @if (currentPhase === 'fase2') {
       <div class="phase-card">
-        <div class="phase-header">
-          <h2>❓ Fase 2: Selección de Preguntas</h2>
-          <p>Selecciona cuáles preguntas o aspectos del cuestionario zodiacal formarán las dimensiones del dataset.</p>
-        </div>
-        <div class="phase-body">
-          <div class="info-pill">
-            <span>ℹ️ Por defecto se utilizan todas las preguntas activas del cuestionario.</span>
+        <div class="phase-header flex-header">
+          <div>
+            <h2>❓ Fase 2: Selección de Preguntas</h2>
+            <p>Selecciona cuáles preguntas o aspectos del cuestionario zodiacal formarán las dimensiones del dataset.</p>
           </div>
-          <button class="btn-next" (click)="onPhaseChange('fase3')">Continuar a Selección de Algoritmo →</button>
+          <div class="selection-status-badge">
+            Seleccionadas: <strong>{{ preguntaIdsSeleccionadas.length }}</strong> / {{ preguntas.length }}
+          </div>
+        </div>
+
+        <div class="phase-body">
+          <div class="info-pill-row">
+            <div class="info-pill">
+              <span>ℹ️ Por defecto se utilizan todas las preguntas activas del cuestionario.</span>
+            </div>
+            <button class="btn-toggle-all-questions" (click)="toggleAllQuestions()">
+              {{ preguntaIdsSeleccionadas.length === preguntas.length ? 'Deseleccionar Todas' : 'Seleccionar Todas' }}
+            </button>
+          </div>
+
+          <!-- Grid de Preguntas -->
+          <div class="questions-selection-grid">
+            @for (q of preguntas; track q._id) {
+              <div 
+                class="question-selection-card" 
+                [class.card-selected]="isQuestionSelected(q._id)"
+                (click)="toggleQuestionSelection(q._id)"
+              >
+                <div class="question-card-header">
+                  <span class="question-number">Pregunta {{ q.numero }}</span>
+                  <input 
+                    type="checkbox" 
+                    class="selection-checkbox" 
+                    [checked]="isQuestionSelected(q._id)"
+                    (click)="$event.stopPropagation()"
+                    (change)="toggleQuestionSelection(q._id)"
+                  />
+                </div>
+                <p class="question-text">{{ q.texto }}</p>
+                <span class="aspect-label">Dimensión: {{ q.aspectoId }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="phase-actions-footer">
+            <button class="btn-next" (click)="onPhaseChange('fase3')">Continuar a Selección de Algoritmo →</button>
+          </div>
         </div>
       </div>
     }
@@ -194,10 +321,62 @@
           }
         </section>
 
+        <!-- SECCIÓN DE BITÁCORA / HISTORIAL DE CORRIDAS (FLEX CARDS) -->
+        @if (bitacoraLogs.length > 0) {
+          <section class="bitacora-section">
+            <div class="config-card bitacora-card">
+              <div class="card-header">
+                <span class="config-icon">📋</span>
+                <div>
+                  <h2 class="config-title">Bitácora de Corridas Realizadas</h2>
+                  <p class="config-subtitle">Historial de ejecuciones durante esta sesión</p>
+                </div>
+              </div>
+              
+              <div class="table-container-glass">
+                <table class="bitacora-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha / Hora</th>
+                      <th>Algoritmo</th>
+                      <th>Registros (Personas)</th>
+                      <th>Dimensiones (Preguntas)</th>
+                      <th>Parámetros</th>
+                      <th>Tiempo Respuesta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (log of bitacoraLogs; track log.fecha) {
+                      <tr>
+                        <td>{{ log.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                        <td><span class="algo-badge">{{ log.algoritmo }}</span></td>
+                        <td>{{ log.totalPersonas }}</td>
+                        <td>{{ log.totalPreguntas }}</td>
+                        <td>
+                          <span class="params-pill">
+                            @if (log.algoritmo === 'K-Means') {
+                              k = {{ log.parametros.k }}, pca = {{ log.parametros.pca ? 'Sí' : 'No' }}
+                            } @else {
+                              linkage = {{ log.parametros.metodoEnlace }}
+                            }
+                          </span>
+                        </td>
+                        <td><strong class="time-text">{{ log.tiempoRespuestaMs }} ms</strong></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        }
+
         <!-- ABAJO DEL TODO: SELECCIÓN DE RESULTADOS Y GRÁFICAS (FULL WIDTH) -->
         <div class="full-results-wrapper">
           @if (selectedAlgorithmId === 'kmeans') {
             <app-k-means 
+              [selectedPersonaIds]="personaIdsSeleccionadas"
+              [selectedQuestionIds]="preguntaIdsSeleccionadas"
               [data]="kmeansData" 
               [loading]="isLoading">
             </app-k-means>
@@ -228,6 +407,8 @@
 
         @if (selectedAlgorithmId === 'kmeans') {
           <app-k-means 
+            [selectedPersonaIds]="personaIdsSeleccionadas"
+            [selectedQuestionIds]="preguntaIdsSeleccionadas"
             [data]="kmeansData" 
             [loading]="isLoading">
           </app-k-means>

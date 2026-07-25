@@ -57,6 +57,8 @@ const ELEMENTOS = ['Fuego', 'Agua', 'Tierra', 'Aire'];
 export class KMeansComponent {
   @Input() data: KMeansResultResponse | null = null;
   @Input() loading: boolean = false;
+  @Input() selectedPersonaIds: string[] = [];
+  @Input() selectedQuestionIds: string[] = [];
 
   Math = Math;
   elementosOptions = ELEMENTOS;

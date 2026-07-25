@@ -70,6 +70,11 @@ export class ApiService {
     return this.http.get<any>(`${this.apiUrl}/envios`, { params });
   }
 
+  getPersonas(limit = 50, skip = 0, filtros = {}): Observable<any> {
+    const params = { limit: limit.toString(), skip: skip.toString(), ...filtros };
+    return this.http.get<any>(`${this.apiUrl}/personas`, { params });
+  }
+
   getEnvioById(id: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/envios/${id}`);
   }

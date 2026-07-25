@@ -447,3 +447,24 @@
   .detail-drawer { width: 100%; }
   .stats-row .stat-card { min-width: 100px; }
 }
+
+.btn-clustering {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.btn-clustering:hover {
+  background: #4f46e5;
+}
