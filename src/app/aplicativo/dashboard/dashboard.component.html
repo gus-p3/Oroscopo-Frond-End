@@ -292,6 +292,32 @@
                   </select>
                   <span class="form-hint">Criterio utilizado para calcular la distancia entre clusters.</span>
                 </div>
+
+                <div class="form-group">
+                  <label for="nClusters" class="form-label">Número de Clusters</label>
+                  <input 
+                    type="number" 
+                    id="nClusters" 
+                    class="form-control" 
+                    [(ngModel)]="nClusters" 
+                    min="2" 
+                    max="10" 
+                    placeholder="Ej. 3"
+                  />
+                  <span class="form-hint">Define la cantidad de grupos a formar al realizar el corte del árbol.</span>
+                </div>
+
+                <div class="form-group checkbox-group">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="incluirPCA" 
+                      class="form-checkbox"
+                    />
+                    <span>Incluir componentes PCA (2D)</span>
+                  </label>
+                  <span class="form-hint">Genera coordenadas 2D para graficar la distribución.</span>
+                </div>
               </div>
             }
 
@@ -382,16 +408,13 @@
             </app-k-means>
           }
 
-          @if (selectedAlgorithmId === 'jerarquico' && hierarchicalData) {
-            <div class="hierarchical-card">
-              <div class="results-header">
-                <span class="success-badge">✅ Clusterización Jerárquica Completada</span>
-                <h3 class="results-title">Resultados Jerárquicos</h3>
-                <p class="results-msg">{{ hierarchicalData.message }}</p>
-              </div>
-              <p><strong>Método de Enlace:</strong> {{ hierarchicalData.result.metodoEnlace || metodoEnlace }}</p>
-              <p><strong>Total de Registros Enlazados:</strong> {{ hierarchicalData.result.labels?.length || 0 }}</p>
-            </div>
+          @if (selectedAlgorithmId === 'jerarquico') {
+            <app-hierarchical 
+              [selectedPersonaIds]="personaIdsSeleccionadas"
+              [selectedQuestionIds]="preguntaIdsSeleccionadas"
+              [data]="hierarchicalData" 
+              [loading]="isLoading">
+            </app-hierarchical>
           }
         </div>
       </div>
@@ -415,24 +438,12 @@
         }
 
         @if (selectedAlgorithmId === 'jerarquico') {
-          <div class="results-container">
-            @if (hierarchicalData) {
-              <div class="results-header">
-                <span class="success-badge">✅ Clusterización Completada</span>
-                <h3 class="results-title">Resultados Jerárquicos</h3>
-                <p class="results-msg">{{ hierarchicalData.message }}</p>
-              </div>
-              <div class="hierarchical-card">
-                <p><strong>Método de Enlace:</strong> {{ hierarchicalData.result.metodoEnlace || metodoEnlace }}</p>
-                <p><strong>Total de Registros Enlazados:</strong> {{ hierarchicalData.result.labels?.length || 0 }}</p>
-              </div>
-            } @else {
-              <div class="empty-results">
-                <span class="empty-icon">🌳</span>
-                <p>Aún no has ejecutado el algoritmo jerárquico. Ve a la <a href="javascript:void(0)" (click)="onPhaseChange('fase3')">Fase 3</a> para configurarlo y ejecutarlo.</p>
-              </div>
-            }
-          </div>
+          <app-hierarchical 
+            [selectedPersonaIds]="personaIdsSeleccionadas"
+            [selectedQuestionIds]="preguntaIdsSeleccionadas"
+            [data]="hierarchicalData" 
+            [loading]="isLoading">
+          </app-hierarchical>
         }
       </div>
     }
