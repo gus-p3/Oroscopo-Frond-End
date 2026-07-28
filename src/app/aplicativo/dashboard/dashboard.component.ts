@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NavBarComponent } from '../nav-bar/nav-bar.component';
 import { SelectAlgoritmComponent, AlgoritmItem } from '../components/select-algoritm/select-algoritm.component';
 import { KMeansComponent } from '../components/k-means/k-means.component';
+import { HierarchicalComponent } from '../components/hierarchical/hierarchical.component';
 import { AlgorithmService, KMeansResultResponse, HierarchicalResultResponse, ElbowResultResponse } from '../../services/algorithm.service';
 import { ApiService } from '../../services/api.service';
 
@@ -15,7 +16,8 @@ import { ApiService } from '../../services/api.service';
     FormsModule, 
     NavBarComponent, 
     SelectAlgoritmComponent, 
-    KMeansComponent
+    KMeansComponent,
+    HierarchicalComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
@@ -36,6 +38,7 @@ export class DashboardComponent implements OnInit {
 
   // Parámetros para Clusterización Jerárquica
   metodoEnlace: 'ward' | 'average' | 'complete' = 'ward';
+  nClusters: number = 3;
 
   // Estados de ejecución
   isLoading: boolean = false;
@@ -271,6 +274,8 @@ export class DashboardComponent implements OnInit {
     } else if (this.selectedAlgorithmId === 'jerarquico') {
       const payload = {
         metodoEnlace: this.metodoEnlace,
+        nClusters: Number(this.nClusters),
+        incluirPCA: this.incluirPCA,
         ids: this.personaIdsSeleccionadas,
         questions: this.preguntaIdsSeleccionadas
       };
@@ -286,7 +291,7 @@ export class DashboardComponent implements OnInit {
             algoritmo: 'Clusterización Jerárquica',
             totalPersonas: payload.ids.length || this.personas.length || 'Todas',
             totalPreguntas: payload.questions.length || this.preguntas.length || 'Todas',
-            parametros: { metodoEnlace: payload.metodoEnlace },
+            parametros: { metodoEnlace: payload.metodoEnlace, nClusters: payload.nClusters },
             tiempoRespuestaMs: Date.now() - inicioMs
           };
           this.bitacoraLogs.unshift(logBitacora);

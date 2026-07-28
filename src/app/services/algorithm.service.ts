@@ -47,11 +47,16 @@ export interface KMeansResultResponse {
 
 export interface HierarchicalResultResponse {
   message: string;
+  personas?: PersonaCluster[];
   result: {
     linkage_matrix?: number[][];
+    linkageMatrix?: number[][];
     labels?: number[];
+    labelsOrden?: string[];
     metodoEnlace?: string;
     dendrogram_data?: any;
+    pca2d?: number[][];
+    pca_2d?: number[][];
   };
 }
 
