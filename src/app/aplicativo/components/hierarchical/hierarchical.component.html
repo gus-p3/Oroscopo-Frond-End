@@ -31,6 +31,62 @@
       </div>
     </div>
 
+    
+    <!-- ==================== SECCIÓN: DENDROGRAMA INTERACTIVO ==================== -->
+    <div class="section-divider-title margin-top-section">
+      <h4 class="sub-section-header">🌳 Dendrograma de Agrupamiento Jerárquico</h4>
+      <p class="sub-section-desc">Estructura del árbol (Linkage Matrix). Usa el deslizador para cortar el árbol y formar los clusters.</p>
+    </div>
+
+    <div class="chart-card dendrogram-card">
+      <div class="dendrogram-controls">
+        <label for="cutSlider" class="slider-label">
+          <strong>Nivel de Corte (Número de Clusters K): <span class="badge-k">{{ localK }}</span></strong>
+        </label>
+        <div class="slider-container">
+          <span class="slider-min">1</span>
+          <input 
+            type="range" 
+            id="cutSlider" 
+            class="range-slider"
+            min="1" 
+            [max]="maxK" 
+            step="1" 
+            [(ngModel)]="localK" 
+            (ngModelChange)="onLocalKChange()"
+          />
+          <span class="slider-max">{{ maxK }}</span>
+        </div>
+      </div>
+
+      <div class="svg-container">
+        <svg viewBox="0 0 800 250" class="dendro-svg">
+          <!-- Enlaces del Dendrograma -->
+          @for (path of dendrogramPaths; track path.d) {
+            <path 
+              [attr.d]="path.d" 
+              fill="none" 
+              [attr.stroke]="path.color" 
+              stroke-width="2"
+              class="dendro-path"
+            />
+          }
+          <!-- Línea de Corte -->
+          <line 
+            x1="10" 
+            [attr.y1]="cutLineY" 
+            x2="790" 
+            [attr.y2]="cutLineY" 
+            stroke="#EF4444" 
+            stroke-width="2" 
+            stroke-dasharray="8 4" 
+            class="cut-line"
+          />
+          <text x="790" [attr.y]="cutLineY - 8" text-anchor="end" fill="#EF4444" class="cut-line-text">Corte K={{localK}}</text>
+        </svg>
+      </div>
+    </div>
+
     <!-- ==================== SECCIÓN 1: GRÁFICAS DE DISPERSIÓN DE PUNTOS ==================== -->
     <div class="section-divider-title">
       <h4 class="sub-section-header">📍 Gráficas de Dispersión de Puntos (Scatter Plots)</h4>

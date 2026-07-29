@@ -26,9 +26,7 @@
         0 2px 8px 0 rgba(2, 132, 199, 0.05),
         inset 0 1px 2px 0 rgba(255, 255, 255, 1);
 
-    /* --- POSICIÓN PEGAJOSA (STICKY) --- */
-    position: sticky;
-    top: 15px;
+    /* --- POSICIÓN --- */
     z-index: 1000;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

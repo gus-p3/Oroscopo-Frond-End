@@ -14,14 +14,15 @@ export interface NavItem {
   styleUrl: './nav-bar.component.css',
 })
 export class NavBarComponent {
-  @Input() activePhase: string = 'fase3';
+  @Input() activePhase: string = 'fase1';
   @Output() phaseSelected = new EventEmitter<string>();
 
   navItems: NavItem[] = [
     { id: 'fase1', nombre: 'Fase 1: Selección de Personas' },
     { id: 'fase2', nombre: 'Fase 2: Selección de Preguntas' },
     { id: 'fase3', nombre: 'Fase 3: Selección de Algoritmo' },
-    { id: 'fase4', nombre: 'Fase 4: Resultados' }
+    { id: 'fase4', nombre: 'Fase 4: Resultados' },
+    { id: 'fase5', nombre: 'Fase 5: Bitácora' }
   ];
 
   selectPhase(phaseId: string) {

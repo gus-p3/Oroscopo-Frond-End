@@ -82,4 +82,13 @@ export class ApiService {
   getEstadisticas(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/estadisticas`);
   }
+
+  getBitacora(limit = 10, skip = 0): Observable<any> {
+    const params = { limit: limit.toString(), skip: skip.toString() };
+    return this.http.get<any>(`${this.apiUrl}/bitacora`, { params });
+  }
+
+  saveBitacora(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/bitacora`, data);
+  }
 }

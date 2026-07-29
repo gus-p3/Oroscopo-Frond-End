@@ -26,8 +26,8 @@ export class DashboardComponent implements OnInit {
   private algorithmService = inject(AlgorithmService);
   private apiService = inject(ApiService);
 
-  // Fase activa en el dashboard (fase1, fase2, fase3, fase4)
-  currentPhase: string = 'fase3';
+  // Fase activa en el dashboard
+  currentPhase: string = 'fase1';
 
   selectedAlgorithmId: string = 'kmeans';
   selectedAlgorithmName: string = 'K-Means Clustering';
@@ -38,7 +38,6 @@ export class DashboardComponent implements OnInit {
 
   // Parámetros para Clusterización Jerárquica
   metodoEnlace: 'ward' | 'average' | 'complete' = 'ward';
-  nClusters: number = 3;
 
   // Estados de ejecución
   isLoading: boolean = false;
@@ -71,8 +70,13 @@ export class DashboardComponent implements OnInit {
 
   // Historial de Bitácoras de Actividad (Estado local del frontend)
   bitacoraLogs: any[] = [];
+  currentBitacoraPayload: any = null;
+  currentBitacoraDisplay: any = null;
+  isSavingBitacora: boolean = false;
+  bitacoraSuccessMessage: string = '';
 
   ngOnInit() {
+    this.cargarHistorialBitacora();
     // Cargar catálogos para filtros
     this.apiService.getCatalogos().subscribe({
       next: (res) => {
@@ -104,6 +108,50 @@ export class DashboardComponent implements OnInit {
         console.error('Error al cargar preguntas:', err);
       }
     });
+  }
+
+  cargarHistorialBitacora() {
+    this.apiService.getBitacora().subscribe({
+      next: (res) => {
+        this.bitacoraLogs = res.map((b: any) => ({
+          _id: b._id,
+          fecha: b.fecha,
+          algoritmo: b.algoritmo === 'kmeans' ? 'K-Means' : 'Clusterización Jerárquica',
+          totalPersonas: b.filtrosDataset?.totalRegistros || 'Todas',
+          totalPreguntas: b.filtrosDataset?.totalPreguntas || 'Todas',
+          preguntasDetalle: b.filtrosDataset?.preguntasDetalle || '',
+          parametros: b.algoritmo === 'kmeans' 
+            ? { k: b.parametrosUsados?.k, pca: b.parametrosUsados?.incluirPCA } 
+            : { metodoEnlace: b.parametrosUsados?.metodoEnlace, nClusters: b.parametrosUsados?.nClusters },
+          tiempoRespuestaMs: '-', // No está en DB, se muestra para nuevas
+          resultadoCompleto: b.resultadoCompleto
+        }));
+      },
+      error: (err) => console.error('Error al cargar bitácora', err)
+    });
+  }
+
+  verResultadosHistoricos(log: any) {
+    this.errorMessage = '';
+    this.isLoading = true;
+    
+    // Simular un pequeño tiempo de carga visual
+    setTimeout(() => {
+      if (log.algoritmo === 'K-Means' || log.algoritmo === 'kmeans') {
+        this.selectedAlgorithmId = 'kmeans';
+        this.selectedAlgorithmName = 'K-Means Clustering';
+        this.kmeansData = log.resultadoCompleto;
+        this.hierarchicalData = null;
+      } else {
+        this.selectedAlgorithmId = 'jerarquico';
+        this.selectedAlgorithmName = 'Clusterización Jerárquica';
+        this.hierarchicalData = log.resultadoCompleto;
+        this.kmeansData = null;
+      }
+      
+      this.isLoading = false;
+      this.onPhaseChange('fase4');
+    }, 300);
   }
 
   // Filtrado de personas en Fase 1
@@ -255,16 +303,40 @@ export class DashboardComponent implements OnInit {
           this.kmeansData = res;
           this.isLoading = false;
 
-          // Registrar el log de bitácora de actividad en el estado
-          const logBitacora = {
+          // Preparar los datos para la Fase 6 de Bitácora
+          const clusterSizes: Record<number, number> = {};
+          if (res.result && res.result.labels) {
+            for (const label of res.result.labels) {
+              clusterSizes[label] = (clusterSizes[label] || 0) + 1;
+            }
+          }
+          
+          const preguntasUsadas = this.preguntas.filter(q => payload.questions.includes(q._id));
+          const preguntasDetalle = preguntasUsadas.map(q => `P${q.numero}`).join(', ');
+
+          this.currentBitacoraPayload = {
+            algoritmo: 'kmeans',
+            parametrosUsados: { k: payload.k, incluirPCA: payload.incluirPCA },
+            filtrosDataset: { totalRegistros: payload.ids.length, totalPreguntas: payload.questions.length, preguntasDetalle },
+            resumenResultados: {
+                numClusters: payload.k,
+                inercia: res.result.inercia,
+                clusterSizes
+            },
+            resultadoCompleto: res
+          };
+
+          this.currentBitacoraDisplay = {
             fecha: new Date(),
             algoritmo: 'K-Means',
             totalPersonas: payload.ids.length || this.personas.length || 'Todas',
             totalPreguntas: payload.questions.length || this.preguntas.length || 'Todas',
+            preguntasDetalle,
             parametros: { k: payload.k, pca: payload.incluirPCA },
-            tiempoRespuestaMs: Date.now() - inicioMs
+            tiempoRespuestaMs: Date.now() - inicioMs,
+            resultadoCompleto: res
           };
-          this.bitacoraLogs.unshift(logBitacora);
+          this.bitacoraSuccessMessage = '';
         },
         error: (err) => {
           this.errorMessage = err?.error?.error || err?.error?.message || 'Error al ejecutar K-Means en el backend.';
@@ -274,7 +346,6 @@ export class DashboardComponent implements OnInit {
     } else if (this.selectedAlgorithmId === 'jerarquico') {
       const payload = {
         metodoEnlace: this.metodoEnlace,
-        nClusters: Number(this.nClusters),
         incluirPCA: this.incluirPCA,
         ids: this.personaIdsSeleccionadas,
         questions: this.preguntaIdsSeleccionadas
@@ -285,16 +356,42 @@ export class DashboardComponent implements OnInit {
           this.hierarchicalData = res;
           this.isLoading = false;
 
-          // Registrar el log de bitácora de actividad en el estado
-          const logBitacora = {
+          // Preparar los datos para la Fase 6 de Bitácora
+          const clusterSizes: Record<number, number> = {};
+          const labels = res.result.labels || [];
+          for (const label of labels) {
+            clusterSizes[label] = (clusterSizes[label] || 0) + 1;
+          }
+
+          const preguntasUsadas = this.preguntas.filter(q => payload.questions.includes(q._id));
+          const preguntasDetalle = preguntasUsadas.map(q => `P${q.numero}`).join(', ');
+
+          this.currentBitacoraPayload = {
+            algoritmo: 'jerarquico',
+            parametrosUsados: { 
+                metodoEnlace: payload.metodoEnlace,
+                incluirPCA: payload.incluirPCA
+            },
+            filtrosDataset: { totalRegistros: payload.ids.length, totalPreguntas: payload.questions.length, preguntasDetalle },
+            resumenResultados: {
+                linkageMatrixLength: res.result.linkageMatrix?.length || res.result.linkage_matrix?.length || 0,
+                metodoEnlace: payload.metodoEnlace,
+                clusterSizes
+            },
+            resultadoCompleto: res
+          };
+
+          this.currentBitacoraDisplay = {
             fecha: new Date(),
             algoritmo: 'Clusterización Jerárquica',
             totalPersonas: payload.ids.length || this.personas.length || 'Todas',
             totalPreguntas: payload.questions.length || this.preguntas.length || 'Todas',
-            parametros: { metodoEnlace: payload.metodoEnlace, nClusters: payload.nClusters },
-            tiempoRespuestaMs: Date.now() - inicioMs
+            preguntasDetalle,
+            parametros: { metodoEnlace: payload.metodoEnlace },
+            tiempoRespuestaMs: Date.now() - inicioMs,
+            resultadoCompleto: res
           };
-          this.bitacoraLogs.unshift(logBitacora);
+          this.bitacoraSuccessMessage = '';
         },
         error: (err) => {
           this.errorMessage = err?.error?.error || err?.error?.message || 'Error al ejecutar la Clusterización Jerárquica.';
@@ -302,5 +399,27 @@ export class DashboardComponent implements OnInit {
         }
       });
     }
+  }
+
+  saveCurrentBitacora() {
+    if (!this.currentBitacoraPayload) return;
+    this.isSavingBitacora = true;
+    this.bitacoraSuccessMessage = '';
+    
+    this.apiService.saveBitacora(this.currentBitacoraPayload).subscribe({
+      next: (res) => {
+        this.isSavingBitacora = false;
+        this.bitacoraSuccessMessage = '¡Bitácora guardada con éxito!';
+        
+        // Limpiar formulario y recargar historial desde la base de datos
+        this.currentBitacoraPayload = null;
+        this.currentBitacoraDisplay = null;
+        this.cargarHistorialBitacora();
+      },
+      error: (err) => {
+        this.isSavingBitacora = false;
+        this.errorMessage = err?.error?.message || 'Error al guardar bitácora';
+      }
+    });
   }
 }
