@@ -31,15 +31,36 @@
       </div>
     </div>
 
-
-    <!-- ==================== SECCIÓN: DENDROGRAMA ==================== -->
+    <!-- ==================== SECCIÓN: DENDROGRAMA INTERACTIVO ==================== -->
     <div class="section-divider-title margin-top-section">
       <h4 class="sub-section-header">🌳 Dendrograma de Agrupamiento Jerárquico (Árbol de Enlace)</h4>
-      <p class="sub-section-desc">Muestra el proceso de fusión paso a paso. Las ramas están coloreadas por cluster.</p>
+      <p class="sub-section-desc">Estructura del árbol (Linkage Matrix). Usa el deslizador para cortar el árbol y ajustar los clusters dinámicamente.</p>
     </div>
 
     <div class="chart-card chart-card-wide" style="margin-top: 15px;">
       <div class="dendrogram-outer-container">
+        <!-- Control Deslizador para Corte Local (Slider) -->
+        <div class="dendrogram-controls" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+          <label for="cutSlider" class="slider-label" style="font-size: 13.5px; color: #1E1B4B;">
+            <strong>Nivel de Corte (Número de Clusters K): <span class="badge-k" style="background: rgba(124,58,237,0.12); color: #7C3AED; padding: 2px 8px; border-radius: 6px; font-weight: 700; margin-left: 5px;">{{ localK }}</span></strong>
+          </label>
+          <div class="slider-container" style="display: flex; align-items: center; gap: 10px; width: 100%; max-width: 400px;">
+            <span class="slider-min" style="font-size: 12px; color: #64748B; font-weight: 600;">1</span>
+            <input 
+              type="range" 
+              id="cutSlider" 
+              class="range-slider"
+              style="flex: 1; accent-color: #7C3AED; cursor: pointer;"
+              min="1" 
+              [max]="maxK" 
+              step="1" 
+              [(ngModel)]="localK" 
+              (ngModelChange)="onLocalKChange()"
+            />
+            <span class="slider-max" style="font-size: 12px; color: #64748B; font-weight: 600;">{{ maxK }}</span>
+          </div>
+        </div>
+
         @if (dendrogramPaths.length > 0) {
           <div class="dendrogram-scroll-wrapper">
             <svg [attr.viewBox]="'0 0 ' + dendrogramWidth + ' ' + dendrogramHeight" 
@@ -57,6 +78,19 @@
                   <title>{{ path.name }} (Altura: {{ path.height.toFixed(3) }})</title>
                 </path>
               }
+
+              <!-- Línea de Corte Horizontal Dinámica -->
+              <line 
+                x1="15" 
+                [attr.y1]="cutLineY" 
+                [attr.x2]="dendrogramWidth - 15" 
+                [attr.y2]="cutLineY" 
+                stroke="#EF4444" 
+                stroke-width="2" 
+                stroke-dasharray="8 4" 
+                class="cut-line"
+              />
+              <text [attr.x]="dendrogramWidth - 20" [attr.y]="cutLineY - 8" text-anchor="end" fill="#EF4444" style="font-size: 11px; font-weight: 700; font-family: sans-serif;">Corte K={{localK}}</text>
               
               <!-- Nombres de personas (hojas) -->
               @for (label of dendrogramLabels; track label.name + '-' + label.x) {
@@ -88,68 +122,13 @@
             </svg>
           </div>
           <div class="dendrogram-instructions">
-            <span>💡 Las líneas de colores representan la fusión dentro de cada cluster asignado. Las grises representan uniones de alto nivel entre clusters distintos. Puedes <strong>hacer clic en el nombre</strong> de cualquier persona para ver su perfil.</span>
+            <span>💡 Mueve el <strong>deslizador de corte</strong> para reagrupar dinámicamente las observaciones. Las ramas por debajo de la línea punteada roja se colorean según su cluster resultante. Haz clic en el nombre de cualquier persona para ver su perfil.</span>
           </div>
         } @else {
           <div class="chart-placeholder">
             <p>No se pudo calcular el dendrograma. Asegúrate de tener al menos 2 personas con respuestas completas.</p>
           </div>
         }
-
-    
-    <!-- ==================== SECCIÓN: DENDROGRAMA INTERACTIVO ==================== -->
-    <div class="section-divider-title margin-top-section">
-      <h4 class="sub-section-header">🌳 Dendrograma de Agrupamiento Jerárquico</h4>
-      <p class="sub-section-desc">Estructura del árbol (Linkage Matrix). Usa el deslizador para cortar el árbol y formar los clusters.</p>
-    </div>
-
-    <div class="chart-card dendrogram-card">
-      <div class="dendrogram-controls">
-        <label for="cutSlider" class="slider-label">
-          <strong>Nivel de Corte (Número de Clusters K): <span class="badge-k">{{ localK }}</span></strong>
-        </label>
-        <div class="slider-container">
-          <span class="slider-min">1</span>
-          <input 
-            type="range" 
-            id="cutSlider" 
-            class="range-slider"
-            min="1" 
-            [max]="maxK" 
-            step="1" 
-            [(ngModel)]="localK" 
-            (ngModelChange)="onLocalKChange()"
-          />
-          <span class="slider-max">{{ maxK }}</span>
-        </div>
-      </div>
-
-      <div class="svg-container">
-        <svg viewBox="0 0 800 250" class="dendro-svg">
-          <!-- Enlaces del Dendrograma -->
-          @for (path of dendrogramPaths; track path.d) {
-            <path 
-              [attr.d]="path.d" 
-              fill="none" 
-              [attr.stroke]="path.color" 
-              stroke-width="2"
-              class="dendro-path"
-            />
-          }
-          <!-- Línea de Corte -->
-          <line 
-            x1="10" 
-            [attr.y1]="cutLineY" 
-            x2="790" 
-            [attr.y2]="cutLineY" 
-            stroke="#EF4444" 
-            stroke-width="2" 
-            stroke-dasharray="8 4" 
-            class="cut-line"
-          />
-          <text x="790" [attr.y]="cutLineY - 8" text-anchor="end" fill="#EF4444" class="cut-line-text">Corte K={{localK}}</text>
-        </svg>
-
       </div>
     </div>
 
