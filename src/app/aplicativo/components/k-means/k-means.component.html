@@ -151,27 +151,117 @@
       <div class="chart-card">
         <div class="chart-header">
           <h4 class="chart-title">🔥 Puntos 3: Elemento Real vs Calculado</h4>
-          <span class="chart-subtitle">Matriz 4x4 de Elemento del Signo vs Elemento del Cuestionario</span>
+          <span class="chart-subtitle">Matriz 4×4 — Elemento del Signo (X) vs Elemento del Cuestionario (Y). Puntos en la diagonal ↘ = coincidencia.</span>
         </div>
 
         @if (zodiacVsElementPoints.length > 0) {
           <div class="svg-container">
-            <svg viewBox="0 0 560 280" class="pca-svg">
-              <line x1="45" y1="235" x2="515" y2="235" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              <line x1="45" y1="45" x2="45" y2="235" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              <!-- Etiqueta eje X -->
-              <text x="280" y="275" text-anchor="middle" class="axis-label">Elemento del Signo Zodiacal (Fuego · Agua · Tierra · Aire)</text>
-              <!-- Etiqueta eje Y (rotada) -->
-              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">Elemento del Cuestionario</text>
+            <svg viewBox="0 0 580 310" class="pca-svg">
+
+              <!-- === CUADRÍCULA 4×4 === -->
+              <!-- Líneas verticales en cada elemento X -->
+              @for (i of [0,1,2,3]; track i) {
+                <line
+                  [attr.x1]="55 + (i / 3) * 470"
+                  y1="20"
+                  [attr.x2]="55 + (i / 3) * 470"
+                  y2="240"
+                  stroke="rgba(100,116,139,0.15)"
+                  stroke-width="1"
+                />
+              }
+              <!-- Líneas horizontales en cada elemento Y -->
+              @for (i of [0,1,2,3]; track i) {
+                <line
+                  x1="55"
+                  [attr.y1]="240 - (i / 3) * 220"
+                  x2="525"
+                  [attr.y2]="240 - (i / 3) * 220"
+                  stroke="rgba(100,116,139,0.15)"
+                  stroke-width="1"
+                />
+              }
+
+              <!-- === DIAGONAL DE REFERENCIA (donde X = Y = coincidencia) === -->
+              <line x1="55" y1="240" x2="525" y2="20"
+                stroke="#10B981" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.7"/>
+              <text x="495" y="17" text-anchor="end" fill="#10B981" style="font-size:9px;font-weight:700;font-family:sans-serif;">✓ Coincidencia</text>
+
+              <!-- === EJES PRINCIPALES === -->
+              <line x1="55" y1="240" x2="525" y2="240" stroke="rgba(30,27,75,0.3)" stroke-width="1.5"/>
+              <line x1="55" y1="20"  x2="55"  y2="240" stroke="rgba(30,27,75,0.3)" stroke-width="1.5"/>
+
+              <!-- === TICKS EJE X (Elemento del Signo Zodiacal) === -->
+              @for (elem of [
+                {label:'🔥 Fuego', i:0, emoji:'🔥'},
+                {label:'💧 Agua',  i:1, emoji:'💧'},
+                {label:'🌍 Tierra',i:2, emoji:'🌍'},
+                {label:'🌬️ Aire',  i:3, emoji:'🌬️'}
+              ]; track elem.i) {
+                <!-- Tick mark -->
+                <line
+                  [attr.x1]="55 + (elem.i / 3) * 470"
+                  y1="240"
+                  [attr.x2]="55 + (elem.i / 3) * 470"
+                  y2="247"
+                  stroke="rgba(30,27,75,0.4)" stroke-width="1.5"
+                />
+                <!-- Etiqueta -->
+                <text
+                  [attr.x]="55 + (elem.i / 3) * 470"
+                  y="262"
+                  text-anchor="middle"
+                  style="font-size:10px;font-weight:600;font-family:'Segoe UI',sans-serif;fill:#1e1b4b;"
+                >{{ elem.label }}</text>
+              }
+
+              <!-- Título eje X -->
+              <text x="290" y="285" text-anchor="middle"
+                style="font-size:9px;fill:#64748b;font-family:'Segoe UI',sans-serif;">
+                ← Elemento del Signo Zodiacal →
+              </text>
+
+              <!-- === TICKS EJE Y (Elemento del Cuestionario) === -->
+              @for (elem of [
+                {label:'🔥 Fuego', i:0},
+                {label:'💧 Agua',  i:1},
+                {label:'🌍 Tierra',i:2},
+                {label:'🌬️ Aire',  i:3}
+              ]; track elem.i) {
+                <!-- Tick mark -->
+                <line
+                  x1="55"
+                  [attr.y1]="240 - (elem.i / 3) * 220"
+                  x2="48"
+                  [attr.y2]="240 - (elem.i / 3) * 220"
+                  stroke="rgba(30,27,75,0.4)" stroke-width="1.5"
+                />
+                <!-- Etiqueta -->
+                <text
+                  x="44"
+                  [attr.y]="240 - (elem.i / 3) * 220 + 4"
+                  text-anchor="end"
+                  style="font-size:10px;font-weight:600;font-family:'Segoe UI',sans-serif;fill:#1e1b4b;"
+                >{{ elem.label }}</text>
+              }
+
+              <!-- Título eje Y (rotado) -->
+              <text x="11" y="130" text-anchor="middle"
+                transform="rotate(-90,11,130)"
+                style="font-size:9px;fill:#64748b;font-family:'Segoe UI',sans-serif;">
+                ← Elemento del Cuestionario →
+              </text>
+
+              <!-- === PUNTOS === -->
               @for (point of zodiacVsElementPoints; track point.cx + '-' + point.cy) {
-                <circle 
-                  [attr.cx]="point.cx" 
-                  [attr.cy]="point.cy" 
-                  r="7" 
-                  [attr.fill]="point.color" 
+                <circle
+                  [attr.cx]="55 + (point.x / 3) * 470"
+                  [attr.cy]="240 - (point.y / 3) * 220"
+                  r="7"
+                  [attr.fill]="point.color"
                   class="pca-dot"
                 >
-                  <title>{{ point.name }} - {{ point.extraInfo }} (Cluster {{ point.cluster + 1 }})</title>
+                  <title>{{ point.name }} — {{ point.extraInfo }} | Cluster {{ point.cluster + 1 }}</title>
                 </circle>
               }
             </svg>
@@ -183,6 +273,10 @@
                   <span>Cluster {{ cluster.clusterId + 1 }}</span>
                 </div>
               }
+              <div class="legend-item">
+                <span style="display:inline-block;width:20px;height:2px;background:linear-gradient(90deg,#10B981 60%,transparent 60%);background-size:8px 2px;vertical-align:middle;margin-right:4px;"></span>
+                <span style="color:#10B981;font-size:11px;">Coincidencia</span>
+              </div>
             </div>
           </div>
         } @else {
