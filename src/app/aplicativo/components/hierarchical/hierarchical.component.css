@@ -906,3 +906,98 @@
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
+
+/* ==================== DENDROGRAMA STYLES ==================== */
+.dendrogram-outer-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.dendrogram-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.02);
+  padding: 10px;
+}
+
+/* Custom Scrollbar for horizontal scroll */
+.dendrogram-scroll-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.dendrogram-scroll-wrapper::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+}
+
+.dendrogram-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.15);
+  border-radius: 4px;
+}
+
+.dendrogram-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.35);
+}
+
+.dendrogram-svg {
+  display: block;
+}
+
+.dendrogram-path {
+  fill: none;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.85;
+  transition: stroke-width 0.2s ease, opacity 0.2s ease;
+}
+
+.dendrogram-path:hover {
+  stroke-width: 3.5px;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.dendrogram-leaf-group {
+  cursor: pointer;
+}
+
+.dendrogram-leaf-dot {
+  transition: r 0.2s ease, stroke-width 0.2s ease;
+}
+
+.dendrogram-leaf-group:hover .dendrogram-leaf-dot {
+  r: 6.5;
+  stroke: #ffffff;
+  stroke-width: 2px;
+}
+
+.dendrogram-text-label {
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  text-anchor: start;
+  dominant-baseline: middle;
+  transition: font-weight 0.2s ease, fill 0.2s ease;
+}
+
+.dendrogram-leaf-group:hover .dendrogram-text-label {
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.dendrogram-instructions {
+  font-size: 12px;
+  color: #64748B;
+  background: rgba(245, 243, 255, 0.6);
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  padding: 10px 14px;
+  border-radius: 10px;
+  line-height: 1.5;
+}
