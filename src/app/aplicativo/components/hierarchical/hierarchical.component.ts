@@ -65,9 +65,31 @@ const ELEMENTOS = ['Fuego', 'Agua', 'Tierra', 'Aire'];
   templateUrl: './hierarchical.component.html',
   styleUrl: './hierarchical.component.css',
 })
+
+export class HierarchicalComponent {
+  private _data: HierarchicalResultResponse | null = null;
+
+  @Input()
+  set data(value: HierarchicalResultResponse | null) {
+    this._data = value;
+    this.rebuildDendrogram();
+  }
+
+  get data(): HierarchicalResultResponse | null {
+    return this._data;
+  }
+
+
 export class HierarchicalComponent implements OnChanges {
   @Input() data: HierarchicalResultResponse | null = null;
+
   @Input() loading: boolean = false;
+
+  // Propiedades del Dendrograma
+  dendrogramPaths: any[] = [];
+  dendrogramLabels: any[] = [];
+  dendrogramWidth: number = 800;
+  dendrogramHeight: number = 450;
   @Input() selectedPersonaIds: string[] = [];
   @Input() selectedQuestionIds: string[] = [];
 
@@ -789,5 +811,192 @@ export class HierarchicalComponent implements OnChanges {
         coincidenMayorias: domReal.key === domCalc.key
       };
     });
+  }
+
+  rebuildDendrogram() {
+    this.dendrogramPaths = [];
+    this.dendrogramLabels = [];
+
+    if (!this._data || !this._data.result) return;
+
+    const linkageMatrix = this._data.result.linkageMatrix || this._data.result.linkage_matrix;
+    const ids = this._data.result.labelsOrden;
+    const personas = this._data.personas || [];
+
+    if (!linkageMatrix || linkageMatrix.length === 0 || !ids || ids.length < 2) {
+      return;
+    }
+
+    const N = ids.length;
+
+    // 1. Reconstruir los nodos
+    const nodes: any[] = [];
+    const idToNameMap = new Map<string, string>();
+    const idToClusterMap = new Map<string, number>();
+
+    personas.forEach(p => {
+      const pid = p.id || p._id;
+      if (pid) {
+        idToNameMap.set(pid, p.nombre);
+        idToClusterMap.set(pid, p.cluster);
+      }
+    });
+
+    for (let i = 0; i < 2 * N - 1; i++) {
+      nodes.push({
+        id: i,
+        name: i < N ? (idToNameMap.get(ids[i]) || ids[i]) : `Cluster ${i}`,
+        height: 0,
+        left: -1,
+        right: -1,
+        parent: -1,
+        cluster: i < N ? (idToClusterMap.get(ids[i]) ?? -1) : -1,
+        x: 0,
+        y: 0
+      });
+    }
+
+    // Configurar relaciones según matriz de enlace
+    for (let i = 0; i < linkageMatrix.length; i++) {
+      const row = linkageMatrix[i];
+      const leftId = Math.round(row[0]);
+      const rightId = Math.round(row[1]);
+      const height = row[2];
+      const parentId = N + i;
+
+      nodes[parentId].left = leftId;
+      nodes[parentId].right = rightId;
+      nodes[parentId].height = height;
+
+      nodes[leftId].parent = parentId;
+      nodes[rightId].parent = parentId;
+    }
+
+    // Propagar clusters hacia arriba si ambos hijos son del mismo cluster
+    const computeNodeCluster = (nodeId: number): number => {
+      const node = nodes[nodeId];
+      if (node.left === -1 && node.right === -1) {
+        return node.cluster;
+      }
+      const leftCluster = computeNodeCluster(node.left);
+      const rightCluster = computeNodeCluster(node.right);
+
+      if (leftCluster === rightCluster && leftCluster !== -1) {
+        node.cluster = leftCluster;
+      } else {
+        node.cluster = -1; // Diferentes clusters mezclados
+      }
+      return node.cluster;
+    };
+
+    const rootId = 2 * N - 2;
+    computeNodeCluster(rootId);
+
+    // 2. DFS para ordenar las hojas
+    const orderedLeaves: number[] = [];
+    const getLeafOrder = (nodeId: number) => {
+      const node = nodes[nodeId];
+      if (node.left === -1 && node.right === -1) {
+        orderedLeaves.push(nodeId);
+        return;
+      }
+      if (node.left !== -1) getLeafOrder(node.left);
+      if (node.right !== -1) getLeafOrder(node.right);
+    };
+
+    getLeafOrder(rootId);
+
+    // Asignar X coordinate en función de su orden
+    orderedLeaves.forEach((leafId, index) => {
+      nodes[leafId].x = index;
+    });
+
+    // 3. Calcular X de forma recursiva para nodos internos
+    const computeX = (nodeId: number): number => {
+      const node = nodes[nodeId];
+      if (node.left === -1 && node.right === -1) {
+        return node.x;
+      }
+      const leftX = computeX(node.left);
+      const rightX = computeX(node.right);
+      node.x = (leftX + rightX) / 2;
+      return node.x;
+    };
+    computeX(rootId);
+
+    // 4. Normalizar y escalar a SVG
+    const maxDist = nodes[rootId].height || 1;
+
+    // Ancho dinámico basado en la cantidad de personas
+    this.dendrogramWidth = Math.max(800, N * 24);
+    this.dendrogramHeight = 450;
+
+    const paddingLeft = 50;
+    const paddingRight = 50;
+    const paddingTop = 40;
+    const paddingBottom = 130; // Suficiente espacio para nombres rotados
+
+    const scaleX = (x: number) => paddingLeft + (x / (N - 1)) * (this.dendrogramWidth - paddingLeft - paddingRight);
+    const scaleY = (y: number) => this.dendrogramHeight - paddingBottom - (y / maxDist) * (this.dendrogramHeight - paddingTop - paddingBottom);
+
+    // Generar paths coloreados
+    const paths: any[] = [];
+    for (let i = 0; i < linkageMatrix.length; i++) {
+      const parentId = N + i;
+      const node = nodes[parentId];
+      const left = nodes[node.left];
+      const right = nodes[node.right];
+
+      const xParent = scaleX(node.x);
+      const yParent = scaleY(node.height);
+      const xLeft = scaleX(left.x);
+      const yLeft = scaleY(left.height);
+      const xRight = scaleX(right.x);
+      const yRight = scaleY(right.height);
+
+      // Rama izquierda: vertical desde el hijo izquierdo hacia el parentHeight
+      paths.push({
+        d: `M ${xLeft} ${yLeft} L ${xLeft} ${yParent}`,
+        color: this.getClusterColor(left.cluster),
+        height: left.height,
+        parentHeight: node.height,
+        name: left.name
+      });
+
+      // Rama derecha: vertical desde el hijo derecho hacia el parentHeight
+      paths.push({
+        d: `M ${xRight} ${yRight} L ${xRight} ${yParent}`,
+        color: this.getClusterColor(right.cluster),
+        height: right.height,
+        parentHeight: node.height,
+        name: right.name
+      });
+
+      // Puente horizontal que conecta ambos hijos
+      paths.push({
+        d: `M ${xLeft} ${yParent} L ${xRight} ${yParent}`,
+        color: this.getClusterColor(node.cluster),
+        height: node.height,
+        parentHeight: node.height,
+        name: `Conexión a altura ${node.height.toFixed(2)}`
+      });
+    }
+
+    // Generar etiquetas de las hojas
+    const labels: any[] = [];
+    orderedLeaves.forEach((leafId) => {
+      const node = nodes[leafId];
+      const p = personas.find(pers => (pers.id || pers._id) === ids[leafId - (leafId < N ? 0 : N)]);
+      labels.push({
+        x: scaleX(node.x),
+        y: this.dendrogramHeight - paddingBottom + 12,
+        name: node.name,
+        color: this.getClusterColor(node.cluster),
+        persona: p
+      });
+    });
+
+    this.dendrogramPaths = paths;
+    this.dendrogramLabels = labels;
   }
 }

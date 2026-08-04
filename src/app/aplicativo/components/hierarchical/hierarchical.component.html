@@ -31,6 +31,71 @@
       </div>
     </div>
 
+
+    <!-- ==================== SECCIÓN: DENDROGRAMA ==================== -->
+    <div class="section-divider-title margin-top-section">
+      <h4 class="sub-section-header">🌳 Dendrograma de Agrupamiento Jerárquico (Árbol de Enlace)</h4>
+      <p class="sub-section-desc">Muestra el proceso de fusión paso a paso. Las ramas están coloreadas por cluster.</p>
+    </div>
+
+    <div class="chart-card chart-card-wide" style="margin-top: 15px;">
+      <div class="dendrogram-outer-container">
+        @if (dendrogramPaths.length > 0) {
+          <div class="dendrogram-scroll-wrapper">
+            <svg [attr.viewBox]="'0 0 ' + dendrogramWidth + ' ' + dendrogramHeight" 
+                 [attr.width]="dendrogramWidth" 
+                 [attr.height]="dendrogramHeight" 
+                 class="dendrogram-svg">
+              
+              <!-- Líneas/Conectores del Dendrograma -->
+              @for (path of dendrogramPaths; track path.d) {
+                <path 
+                  [attr.d]="path.d" 
+                  [attr.stroke]="path.color" 
+                  class="dendrogram-path"
+                >
+                  <title>{{ path.name }} (Altura: {{ path.height.toFixed(3) }})</title>
+                </path>
+              }
+              
+              <!-- Nombres de personas (hojas) -->
+              @for (label of dendrogramLabels; track label.name + '-' + label.x) {
+                <g class="dendrogram-leaf-group" 
+                   (click)="label.persona ? openPersonaDetail(label.persona.id || label.persona._id) : null">
+                  
+                  <!-- Punto en el extremo inferior de la rama -->
+                  <circle 
+                    [attr.cx]="label.x" 
+                    [attr.cy]="dendrogramHeight - 130" 
+                    r="4.5" 
+                    [attr.fill]="label.color"
+                    class="dendrogram-leaf-dot"
+                  ></circle>
+                  
+                  <!-- Texto inclinado a 45 grados -->
+                  <text 
+                    [attr.x]="label.x" 
+                    [attr.y]="dendrogramHeight - 118" 
+                    [attr.fill]="label.color"
+                    [attr.transform]="'rotate(45, ' + label.x + ', ' + (dendrogramHeight - 118) + ')'"
+                    class="dendrogram-text-label"
+                  >
+                    {{ label.name }}
+                  </text>
+                  <title>Hacer clic para ver detalles de {{ label.name }}</title>
+                </g>
+              }
+            </svg>
+          </div>
+          <div class="dendrogram-instructions">
+            <span>💡 Las líneas de colores representan la fusión dentro de cada cluster asignado. Las grises representan uniones de alto nivel entre clusters distintos. Puedes <strong>hacer clic en el nombre</strong> de cualquier persona para ver su perfil.</span>
+          </div>
+        } @else {
+          <div class="chart-placeholder">
+            <p>No se pudo calcular el dendrograma. Asegúrate de tener al menos 2 personas con respuestas completas.</p>
+          </div>
+        }
+
     
     <!-- ==================== SECCIÓN: DENDROGRAMA INTERACTIVO ==================== -->
     <div class="section-divider-title margin-top-section">
@@ -84,6 +149,7 @@
           />
           <text x="790" [attr.y]="cutLineY - 8" text-anchor="end" fill="#EF4444" class="cut-line-text">Corte K={{localK}}</text>
         </svg>
+
       </div>
     </div>
 
