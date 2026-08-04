@@ -91,4 +91,11 @@ export class ApiService {
   saveBitacora(data: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/bitacora`, data);
   }
+
+  exportDataset(payload: { ids: string[]; questions: string[]; format: string }): Observable<Blob | any> {
+    if (payload.format === 'csv') {
+      return this.http.post(`${this.apiUrl}/personas/export-dataset`, payload, { responseType: 'blob' });
+    }
+    return this.http.post<any>(`${this.apiUrl}/personas/export-dataset`, payload);
+  }
 }

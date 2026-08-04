@@ -5,10 +5,23 @@
       <p>Entrenando modelo Jerárquico y calculando dendrograma en el backend...</p>
     </div>
   } @else if (data) {
-    <div class="results-header">
-      <span class="success-badge">🌳 Clusterización Jerárquica Completada</span>
-      <h3 class="results-title">Resultados y Análisis Jerárquico Multidimensional</h3>
-      <p class="results-msg">{{ data.message }}</p>
+    <div class="results-header flex-header">
+      <div>
+        <span class="success-badge">🌳 Clusterización Jerárquica Completada</span>
+        <h3 class="results-title">Resultados y Análisis Jerárquico Multidimensional</h3>
+        <p class="results-msg">{{ data.message }}</p>
+      </div>
+      <div class="export-btn-group">
+        <button type="button" class="btn-export btn-export-csv" (click)="exportResultsCSV()" title="Exportar resultados a CSV">
+          <span>📊 Exportar CSV</span>
+        </button>
+        <button type="button" class="btn-export btn-export-json" (click)="exportResultsJSON()" title="Exportar resultados a JSON">
+          <span>📄 Exportar JSON</span>
+        </button>
+        <button type="button" class="btn-export btn-export-pdf" (click)="exportPDFReport()" title="Exportar reporte en PDF con imágenes/gráficas">
+          <span>📑 Exportar PDF (con Gráficas)</span>
+        </button>
+      </div>
     </div>
 
     <!-- Métricas Clave -->

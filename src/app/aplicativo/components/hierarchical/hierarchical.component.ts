@@ -843,4 +843,187 @@ export class HierarchicalComponent implements OnChanges {
       };
     });
   }
+
+  // ─── EXPORTAR RESULTADOS (CSV / JSON) ──────────────────────────────────────
+
+  private downloadFile(content: string, filename: string, mimeType: string) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  private escapeCSV(value: any): string {
+    if (value === null || value === undefined) return '""';
+    const str = String(value).replace(/"/g, '""');
+    return `"${str}"`;
+  }
+
+  exportResultsCSV() {
+    if (!this.data?.personas || this.data.personas.length === 0) return;
+
+    const pcaCoords = this.data?.result?.pca_2d || this.data?.result?.pca2d || [];
+
+    const headers = [
+      'Persona ID',
+      'Nombre',
+      'Género',
+      'Signo Zodiacal',
+      'Elemento Signo',
+      'Elemento Predominante',
+      'Cluster Asignado',
+      'Puntaje Fuego',
+      'Puntaje Tierra',
+      'Puntaje Aire',
+      'Puntaje Agua',
+      'PCA_PC1',
+      'PCA_PC2'
+    ];
+
+    const rows = this.data.personas.map((p: any, idx: number) => {
+      const pc1 = pcaCoords[idx] && pcaCoords[idx][0] !== undefined ? pcaCoords[idx][0] : (p.pca_x ?? '');
+      const pc2 = pcaCoords[idx] && pcaCoords[idx][1] !== undefined ? pcaCoords[idx][1] : (p.pca_y ?? '');
+
+      return [
+        this.escapeCSV(p._id || p.id || 'N/A'),
+        this.escapeCSV(p.nombre || 'N/A'),
+        this.escapeCSV(p.genero || 'N/A'),
+        this.escapeCSV(p.signoZodiacal || 'N/A'),
+        this.escapeCSV(p.elementoSigno || 'N/A'),
+        this.escapeCSV(p.elementoEncuesta || p.elementoPredominante || p.elementoPredominanteId || 'N/A'),
+        this.escapeCSV(p.cluster !== undefined && p.cluster !== null ? `Cluster ${p.cluster}` : 'Sin Cluster'),
+        this.escapeCSV(p.puntajes?.Fuego ?? 0),
+        this.escapeCSV(p.puntajes?.Tierra ?? 0),
+        this.escapeCSV(p.puntajes?.Aire ?? 0),
+        this.escapeCSV(p.puntajes?.Agua ?? 0),
+        this.escapeCSV(pc1),
+        this.escapeCSV(pc2)
+      ];
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.downloadFile(csvContent, `resultados_jerarquico_k${this.localK}_${dateStr}.csv`, 'text/csv;charset=utf-8;');
+  }
+
+  exportResultsJSON() {
+    if (!this.data) return;
+
+    const payload = {
+      algoritmo: 'Clusterización Jerárquica',
+      exportedAt: new Date().toISOString(),
+      nClusters: this.localK,
+      metodoEnlace: this.data.result?.metodoEnlace || 'ward',
+      totalMuestras: this.data.personas?.length || 0,
+      linkageMatrix: this.data.result?.linkageMatrix || this.data.result?.linkage_matrix,
+      personas: this.data.personas
+    };
+
+    const jsonContent = JSON.stringify(payload, null, 2);
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.downloadFile(jsonContent, `resultados_jerarquico_k${this.localK}_${dateStr}.json`, 'application/json');
+  }
+
+  exportPDFReport() {
+    if (!this.data) return;
+
+    const dateStr = new Date().toLocaleString();
+    const nClusters = this.clustersList?.length || this.localK;
+    const personasCount = this.data.personas?.length || 0;
+
+    // Estilos básicos a inyectar dentro del SVG serializado
+    const svgInnerStyle = `<style>
+      .pca-dot { cursor: pointer; }
+      .axis-label { font-size: 10px; fill: #64748b; font-family: 'Segoe UI', Arial, sans-serif; }
+      .dendro-node { cursor: pointer; }
+      text { font-size: 10px; fill: #334155; font-family: 'Segoe UI', Arial, sans-serif; }
+      circle { stroke-width: 1.5; stroke: rgba(255,255,255,0.6); }
+      line { stroke: #94a3b8; }
+    </style>`;
+
+    // Serializar SVG sin getComputedStyle — Angular ya pone fill como atributos inline
+    const serializeSVG = (svgEl: SVGElement): string => {
+      const clone = svgEl.cloneNode(true) as SVGElement;
+      const bbox = svgEl.getBoundingClientRect();
+      clone.setAttribute('width', String(bbox.width || 560));
+      clone.setAttribute('height', String(bbox.height || 320));
+      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      clone.insertAdjacentHTML('afterbegin', svgInnerStyle);
+      return new XMLSerializer().serializeToString(clone);
+    };
+
+    const chartCards = Array.from(document.querySelectorAll(
+      '.results-container .chart-card, .results-container .dendrogram-card'
+    )) as HTMLElement[];
+
+    const cardsHtml = chartCards.map(card => {
+      const titleEl = card.querySelector('.chart-header h4, .chart-header h3, h4, h3');
+      const subtitleEl = card.querySelector('.chart-subtitle');
+      const svgEl = card.querySelector('svg') as SVGElement | null;
+      const legendItems = Array.from(card.querySelectorAll('.legend-item')).map(li => li.innerHTML);
+
+      const titleHtml = titleEl ? `<h2 class="card-title">${titleEl.textContent?.trim()}</h2>` : '';
+      const subtitleHtml = subtitleEl ? `<p class="card-subtitle">${subtitleEl.textContent?.trim()}</p>` : '';
+      const legendHtml = legendItems.length > 0
+        ? `<div class="legend-row">${legendItems.map(li => `<span class="legend-item">${li}</span>`).join('')}</div>`
+        : '';
+      const svgHtml = svgEl ? `<div class="svg-wrap">${serializeSVG(svgEl)}</div>` : '<p class="no-chart">Sin datos para esta vista</p>';
+
+      return `<div class="pdf-card">${titleHtml}${subtitleHtml}${svgHtml}${legendHtml}</div>`;
+    }).join('');
+
+    const printWindow = window.open('', '_blank', 'width=1100,height=900');
+    if (!printWindow) {
+      alert('Por favor permite las ventanas emergentes para exportar el PDF.');
+      return;
+    }
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html><head>
+<title>Reporte_Jerarquico_K${nClusters}_${new Date().toISOString().split('T')[0]}</title>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; background: #fff; padding: 14px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pdf-header { text-align: center; border-bottom: 3px solid #7c3aed; padding-bottom: 12px; margin-bottom: 18px; }
+  .pdf-header h1 { color: #5b21b6; font-size: 20px; font-weight: 800; }
+  .pdf-header p { color: #64748b; font-size: 11px; margin-top: 4px; }
+  .pdf-metrics { display: flex; justify-content: space-around; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-bottom: 18px; }
+  .pdf-metric { text-align: center; }
+  .pdf-metric-lbl { font-size: 9px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block; }
+  .pdf-metric-val { font-size: 18px; font-weight: 800; color: #7c3aed; }
+  .section-title { font-size: 14px; font-weight: 700; color: #1e1b4b; border-left: 4px solid #06b6d4; padding-left: 10px; margin: 16px 0 12px 0; }
+  .pdf-card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 14px; page-break-inside: avoid; background: #fff; }
+  .card-title { font-size: 13px; font-weight: 700; color: #1e1b4b; margin-bottom: 2px; }
+  .card-subtitle { font-size: 10px; color: #64748b; margin-bottom: 8px; }
+  .svg-wrap { width: 100%; overflow: hidden; }
+  .svg-wrap svg { width: 100% !important; height: auto !important; max-height: 320px; display: block; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; color: #475569; }
+  .legend-item { display: inline-flex; align-items: center; gap: 3px; }
+  .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  .no-chart { color: #94a3b8; font-size: 11px; font-style: italic; padding: 8px 0; }
+  @media print { .pdf-card { page-break-inside: avoid; } }
+</style>
+</head><body>
+<div class="pdf-header">
+  <h1>🌳 Reporte Clusterización Jerárquica</h1>
+  <p>Generado el ${dateStr} — Sistema Zodíaco</p>
+</div>
+<div class="pdf-metrics">
+  <div class="pdf-metric"><span class="pdf-metric-lbl">Clusters Formados</span><span class="pdf-metric-val">${nClusters}</span></div>
+  <div class="pdf-metric"><span class="pdf-metric-lbl">Método de Enlace</span><span class="pdf-metric-val">${this.data.result?.metodoEnlace || 'Ward'}</span></div>
+  <div class="pdf-metric"><span class="pdf-metric-lbl">Muestras</span><span class="pdf-metric-val">${personasCount}</span></div>
+</div>
+<div class="section-title">🌳 Dendrograma y Gráficas Multidimensionales</div>
+${cardsHtml}
+<script>window.onload=function(){setTimeout(function(){window.print();},600);};<\/script>
+</body></html>`);
+    printWindow.document.close();
+  }
 }
+
+
