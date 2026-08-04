@@ -105,7 +105,7 @@
               />
               <text [attr.x]="dendrogramWidth - 20" [attr.y]="cutLineY - 8" text-anchor="end" fill="#EF4444" style="font-size: 11px; font-weight: 700; font-family: sans-serif;">Corte K={{localK}}</text>
               
-              <!-- Nombres de personas (hojas) -->
+              <!-- Hojas del dendrograma (solo punto, sin nombre) -->
               @for (label of dendrogramLabels; track label.name + '-' + label.x) {
                 <g class="dendrogram-leaf-group" 
                    (click)="label.persona ? openPersonaDetail(label.persona.id || label.persona._id) : null">
@@ -113,29 +113,18 @@
                   <!-- Punto en el extremo inferior de la rama -->
                   <circle 
                     [attr.cx]="label.x" 
-                    [attr.cy]="dendrogramHeight - 130" 
-                    r="4.5" 
+                    [attr.cy]="dendrogramHeight - 30" 
+                    r="5" 
                     [attr.fill]="label.color"
                     class="dendrogram-leaf-dot"
                   ></circle>
-                  
-                  <!-- Texto inclinado a 45 grados -->
-                  <text 
-                    [attr.x]="label.x" 
-                    [attr.y]="dendrogramHeight - 118" 
-                    [attr.fill]="label.color"
-                    [attr.transform]="'rotate(45, ' + label.x + ', ' + (dendrogramHeight - 118) + ')'"
-                    class="dendrogram-text-label"
-                  >
-                    {{ label.name }}
-                  </text>
-                  <title>Hacer clic para ver detalles de {{ label.name }}</title>
+                  <title>{{ label.name }}</title>
                 </g>
               }
             </svg>
           </div>
           <div class="dendrogram-instructions">
-            <span>💡 Mueve el <strong>deslizador de corte</strong> para reagrupar dinámicamente las observaciones. Las ramas por debajo de la línea punteada roja se colorean según su cluster resultante. Haz clic en el nombre de cualquier persona para ver su perfil.</span>
+            <span>💡 Mueve el <strong>deslizador de corte</strong> para reagrupar dinámicamente las observaciones. Las ramas por debajo de la línea punteada roja se colorean según su cluster resultante. Haz clic en cualquier punto para ver el perfil de la persona.</span>
           </div>
         } @else {
           <div class="chart-placeholder">

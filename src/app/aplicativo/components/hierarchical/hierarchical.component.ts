@@ -74,7 +74,7 @@ export class HierarchicalComponent implements OnChanges {
   dendrogramPaths: any[] = [];
   dendrogramLabels: any[] = [];
   dendrogramWidth: number = 800;
-  dendrogramHeight: number = 450;
+  dendrogramHeight: number = 360;
   @Input() selectedPersonaIds: string[] = [];
   @Input() selectedQuestionIds: string[] = [];
 
@@ -228,12 +228,12 @@ export class HierarchicalComponent implements OnChanges {
     
     // Ancho dinámico basado en la cantidad de personas
     this.dendrogramWidth = Math.max(800, n * 24);
-    this.dendrogramHeight = 450;
+    this.dendrogramHeight = 360;
     
     const paddingLeft = 50;
     const paddingRight = 50;
     const paddingTop = 40;
-    const paddingBottom = 130; // espacio para nombres rotados a 45 grados
+    const paddingBottom = 30; // solo puntos, sin nombres rotados
     
     const maxX = n * 10;
     const maxY = root.distance;
