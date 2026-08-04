@@ -85,7 +85,7 @@ export class DashboardComponent implements OnInit {
     });
 
     // Cargar todas las personas registradas con puntajes
-    this.apiService.getPersonas(1000, 0).subscribe({
+    this.apiService.getPersonas(0, 0).subscribe({
       next: (res) => {
         this.personas = res.personas || [];
         this.personasFiltradas = [...this.personas];
