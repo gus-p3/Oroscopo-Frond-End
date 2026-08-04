@@ -31,6 +31,7 @@
       </div>
     </div>
 
+
     <!-- ==================== SECCIÓN: DENDROGRAMA ==================== -->
     <div class="section-divider-title margin-top-section">
       <h4 class="sub-section-header">🌳 Dendrograma de Agrupamiento Jerárquico (Árbol de Enlace)</h4>
@@ -94,6 +95,61 @@
             <p>No se pudo calcular el dendrograma. Asegúrate de tener al menos 2 personas con respuestas completas.</p>
           </div>
         }
+
+    
+    <!-- ==================== SECCIÓN: DENDROGRAMA INTERACTIVO ==================== -->
+    <div class="section-divider-title margin-top-section">
+      <h4 class="sub-section-header">🌳 Dendrograma de Agrupamiento Jerárquico</h4>
+      <p class="sub-section-desc">Estructura del árbol (Linkage Matrix). Usa el deslizador para cortar el árbol y formar los clusters.</p>
+    </div>
+
+    <div class="chart-card dendrogram-card">
+      <div class="dendrogram-controls">
+        <label for="cutSlider" class="slider-label">
+          <strong>Nivel de Corte (Número de Clusters K): <span class="badge-k">{{ localK }}</span></strong>
+        </label>
+        <div class="slider-container">
+          <span class="slider-min">1</span>
+          <input 
+            type="range" 
+            id="cutSlider" 
+            class="range-slider"
+            min="1" 
+            [max]="maxK" 
+            step="1" 
+            [(ngModel)]="localK" 
+            (ngModelChange)="onLocalKChange()"
+          />
+          <span class="slider-max">{{ maxK }}</span>
+        </div>
+      </div>
+
+      <div class="svg-container">
+        <svg viewBox="0 0 800 250" class="dendro-svg">
+          <!-- Enlaces del Dendrograma -->
+          @for (path of dendrogramPaths; track path.d) {
+            <path 
+              [attr.d]="path.d" 
+              fill="none" 
+              [attr.stroke]="path.color" 
+              stroke-width="2"
+              class="dendro-path"
+            />
+          }
+          <!-- Línea de Corte -->
+          <line 
+            x1="10" 
+            [attr.y1]="cutLineY" 
+            x2="790" 
+            [attr.y2]="cutLineY" 
+            stroke="#EF4444" 
+            stroke-width="2" 
+            stroke-dasharray="8 4" 
+            class="cut-line"
+          />
+          <text x="790" [attr.y]="cutLineY - 8" text-anchor="end" fill="#EF4444" class="cut-line-text">Corte K={{localK}}</text>
+        </svg>
+
       </div>
     </div>
 
@@ -117,7 +173,10 @@
             <svg viewBox="0 0 560 280" class="pca-svg">
               <line x1="35" y1="245" x2="525" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
               <line x1="35" y1="35" x2="35" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              
+              <!-- Etiqueta eje X -->
+              <text x="280" y="275" text-anchor="middle" class="axis-label">PC1 (Componente Principal 1)</text>
+              <!-- Etiqueta eje Y (rotada) -->
+              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">PC2 (Componente Principal 2)</text>
               @for (point of pcaPoints; track point.cx + '-' + point.cy) {
                 <circle 
                   [attr.cx]="point.cx" 
@@ -159,7 +218,10 @@
             <svg viewBox="0 0 560 280" class="pca-svg">
               <line x1="35" y1="245" x2="525" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
               <line x1="35" y1="35" x2="35" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              
+              <!-- Etiqueta eje X -->
+              <text x="280" y="275" text-anchor="middle" class="axis-label">PC1 (Posición en Componente Principal)</text>
+              <!-- Etiqueta eje Y (rotada) -->
+              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">Distancia al Grupo</text>
               @for (point of centroidDistancePoints; track point.cx + '-' + point.cy) {
                 <circle 
                   [attr.cx]="point.cx" 
@@ -201,7 +263,10 @@
             <svg viewBox="0 0 560 280" class="pca-svg">
               <line x1="45" y1="235" x2="515" y2="235" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
               <line x1="45" y1="45" x2="45" y2="235" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              
+              <!-- Etiqueta eje X -->
+              <text x="280" y="275" text-anchor="middle" class="axis-label">Elemento del Signo Zodiacal (Fuego · Agua · Tierra · Aire)</text>
+              <!-- Etiqueta eje Y (rotada) -->
+              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">Elemento del Cuestionario</text>
               @for (point of zodiacVsElementPoints; track point.cx + '-' + point.cy) {
                 <circle 
                   [attr.cx]="point.cx" 
@@ -243,7 +308,10 @@
             <svg viewBox="0 0 560 280" class="pca-svg">
               <line x1="35" y1="245" x2="525" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
               <line x1="35" y1="35" x2="35" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              
+              <!-- Etiqueta eje X -->
+              <text x="280" y="275" text-anchor="middle" class="axis-label">PC2 (Componente Principal 2)</text>
+              <!-- Etiqueta eje Y (rotada) -->
+              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">−PC1 (Eje Invertido)</text>
               @for (point of rotatedPcaPoints; track point.cx + '-' + point.cy) {
                 <circle 
                   [attr.cx]="point.cx" 

@@ -1,8 +1,20 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HierarchicalResultResponse } from '../../../services/algorithm.service';
 import { PersonaDetailComponent } from '../persona-detail/persona-detail.component';
+
+
+export interface DendrogramNode {
+  id: number;
+  isLeaf: boolean;
+  left?: number;
+  right?: number;
+  distance: number;
+  x: number;
+  y: number;
+  leafIds: number[];
+}
 
 export interface PcaPoint {
   x: number;
@@ -53,6 +65,7 @@ const ELEMENTOS = ['Fuego', 'Agua', 'Tierra', 'Aire'];
   templateUrl: './hierarchical.component.html',
   styleUrl: './hierarchical.component.css',
 })
+
 export class HierarchicalComponent {
   private _data: HierarchicalResultResponse | null = null;
 
@@ -66,6 +79,10 @@ export class HierarchicalComponent {
     return this._data;
   }
 
+
+export class HierarchicalComponent implements OnChanges {
+  @Input() data: HierarchicalResultResponse | null = null;
+
   @Input() loading: boolean = false;
 
   // Propiedades del Dendrograma
@@ -78,6 +95,199 @@ export class HierarchicalComponent {
 
   Math = Math;
   elementosOptions = ELEMENTOS;
+
+  // === DENDROGRAMA Y CLUSTERS LOCALES ===
+  localK: number = 3;
+  maxK: number = 10;
+  computedLabels: number[] = [];
+  
+  nodesMap = new Map<number, DendrogramNode>();
+  rootNodeId: number = 0;
+  
+  dendrogramPaths: {d: string, color: string}[] = [];
+  cutDistance: number = 0;
+  cutLineY: number = 0;
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['data'] && this.data) {
+       this.initDendrogram();
+       this.updateClusters();
+    }
+  }
+
+  onLocalKChange() {
+    this.updateClusters();
+  }
+
+  initDendrogram() {
+    const linkage = this.data?.result?.linkageMatrix || this.data?.result?.linkage_matrix;
+    const personas = this.data?.personas || [];
+    const n = personas.length;
+
+    if (!linkage || n === 0) return;
+
+    this.nodesMap.clear();
+
+    // Crear hojas
+    for (let i = 0; i < n; i++) {
+      this.nodesMap.set(i, {
+        id: i, isLeaf: true, distance: 0, x: 0, y: 0, leafIds: [i]
+      });
+    }
+
+    // Procesar linkage
+    for (let i = 0; i < linkage.length; i++) {
+      const row = linkage[i];
+      const leftId = row[0];
+      const rightId = row[1];
+      const distance = row[2];
+      const newId = n + i;
+
+      const leftNode = this.nodesMap.get(leftId)!;
+      const rightNode = this.nodesMap.get(rightId)!;
+
+      this.nodesMap.set(newId, {
+        id: newId,
+        isLeaf: false,
+        left: leftId,
+        right: rightId,
+        distance: distance,
+        x: 0,
+        y: distance,
+        leafIds: [...leftNode.leafIds, ...rightNode.leafIds]
+      });
+      this.rootNodeId = newId;
+    }
+
+    // Ordenar hojas (in-order traversal)
+    let currentX = 0;
+    const stepX = 10;
+    const traverse = (nodeId: number) => {
+      const node = this.nodesMap.get(nodeId)!;
+      if (node.isLeaf) {
+        node.x = currentX;
+        currentX += stepX;
+      } else {
+        traverse(node.left!);
+        traverse(node.right!);
+        node.x = (this.nodesMap.get(node.left!)!.x + this.nodesMap.get(node.right!)!.x) / 2;
+      }
+    };
+    traverse(this.rootNodeId);
+    
+    this.maxK = Math.min(10, n);
+    // Intentar leer el localK del payload si viene, sino 3
+    // Como Angular pasa nClusters al dashboard, intentamos usar eso, pero aquí data no tiene nClusters directo.
+    this.localK = Math.min(3, n); 
+  }
+
+  updateClusters() {
+    const linkage = this.data?.result?.linkageMatrix || this.data?.result?.linkage_matrix;
+    const personas = this.data?.personas || [];
+    const n = personas.length;
+    if (!linkage || n === 0) {
+      this.computedLabels = Array(n).fill(0);
+      return;
+    }
+
+    const targetK = this.localK;
+    const mergesToPerform = Math.max(0, n - targetK);
+
+    const activeNodes = new Set<number>();
+    for (let i = 0; i < n; i++) activeNodes.add(i);
+
+    let currentDistance = 0;
+    for (let i = 0; i < mergesToPerform; i++) {
+      const row = linkage[i];
+      const leftId = row[0];
+      const rightId = row[1];
+      const newId = n + i;
+      activeNodes.delete(leftId);
+      activeNodes.delete(rightId);
+      activeNodes.add(newId);
+      currentDistance = row[2];
+    }
+    
+    if (mergesToPerform < linkage.length) {
+       const nextMergeDist = linkage[mergesToPerform][2];
+       this.cutDistance = (currentDistance + nextMergeDist) / 2;
+    } else {
+       this.cutDistance = currentDistance + 1;
+    }
+
+    const rootArray = Array.from(activeNodes);
+    
+    // Sort rootArray by node x position so cluster colors are ordered left-to-right visually
+    rootArray.sort((a, b) => this.nodesMap.get(a)!.x - this.nodesMap.get(b)!.x);
+
+    this.computedLabels = new Array(n).fill(0);
+    
+    rootArray.forEach((rootId, clusterIdx) => {
+       const node = this.nodesMap.get(rootId)!;
+       node.leafIds.forEach(leafId => {
+          this.computedLabels[leafId] = clusterIdx;
+          if (personas[leafId]) {
+             personas[leafId].cluster = clusterIdx;
+          }
+       });
+    });
+
+    this.drawDendrogram();
+  }
+
+  drawDendrogram() {
+    const root = this.nodesMap.get(this.rootNodeId);
+    if (!root) return;
+    
+    const svgWidth = 800;
+    const svgHeight = 250;
+    const padding = 20;
+    
+    const maxX = root.leafIds.length * 10;
+    const maxY = root.distance;
+    
+    const scaleX = (x: number) => padding + (x / (maxX || 1)) * (svgWidth - 2 * padding);
+    const scaleY = (y: number) => svgHeight - padding - (y / (maxY || 1)) * (svgHeight - 2 * padding);
+    
+    this.dendrogramPaths = [];
+    
+    const traverseDraw = (nodeId: number, currentCluster: number | null) => {
+      const node = this.nodesMap.get(nodeId)!;
+      let c = currentCluster;
+      if (c === null) {
+         if (node.distance < this.cutDistance || (node.isLeaf && node.distance <= this.cutDistance)) {
+             const firstLeafCluster = this.computedLabels[node.leafIds[0]];
+             const allSame = node.leafIds.every(id => this.computedLabels[id] === firstLeafCluster);
+             if (allSame) c = firstLeafCluster;
+         }
+      }
+      
+      if (!node.isLeaf) {
+         const leftNode = this.nodesMap.get(node.left!)!;
+         const rightNode = this.nodesMap.get(node.right!)!;
+         
+         const x0 = scaleX(leftNode.x);
+         const y0 = scaleY(leftNode.y);
+         const x1 = scaleX(rightNode.x);
+         const y1 = scaleY(rightNode.y);
+         const xMid = scaleX(node.x);
+         const yMid = scaleY(node.y);
+         
+         const path = `M ${x0} ${y0} L ${x0} ${yMid} L ${x1} ${yMid} L ${x1} ${y1}`;
+         this.dendrogramPaths.push({
+            d: path,
+            color: c !== null ? this.getClusterColor(c) : '#CBD5E1'
+         });
+         
+         traverseDraw(node.left!, c);
+         traverseDraw(node.right!, c);
+      }
+    };
+    
+    traverseDraw(this.rootNodeId, null);
+    this.cutLineY = scaleY(this.cutDistance);
+  }
+
 
   // Estado del Panel Lateral (Offcanvas Drawer)
   selectedPersonaId: string | null = null;
@@ -220,7 +430,7 @@ export class HierarchicalComponent {
   get clustersList(): ClusterSummary[] {
     if (!this.data) return [];
 
-    const labels = this.data.result?.labels || [];
+    const labels = this.computedLabels.length ? this.computedLabels : (this.data.result?.labels || []);
     const personas = this.data.personas || [];
     const total = personas.length || labels.length || 1;
 
@@ -259,7 +469,7 @@ export class HierarchicalComponent {
     const coords = this.data?.result?.pca2d || this.data?.result?.pca_2d;
     if (!coords || coords.length === 0) return [];
 
-    const labels = this.data?.result?.labels || [];
+    const labels = this.computedLabels.length ? this.computedLabels : (this.data?.result?.labels || []);
     const personas = this.data?.personas || [];
 
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -295,7 +505,7 @@ export class HierarchicalComponent {
     const coords = this.data?.result?.pca2d || this.data?.result?.pca_2d;
     if (!coords || coords.length === 0) return [];
 
-    const labels = this.data?.result?.labels || [];
+    const labels = this.computedLabels.length ? this.computedLabels : (this.data?.result?.labels || []);
     const personas = this.data?.personas || [];
 
     // Calcular centroide para cada cluster jerárquico
@@ -409,7 +619,7 @@ export class HierarchicalComponent {
     const coords = this.data?.result?.pca2d || this.data?.result?.pca_2d;
     if (!coords || coords.length === 0) return [];
 
-    const labels = this.data?.result?.labels || [];
+    const labels = this.computedLabels.length ? this.computedLabels : (this.data?.result?.labels || []);
     const personas = this.data?.personas || [];
 
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;

@@ -5,6 +5,15 @@
   width: 100%;
 }
 
+/* Etiquetas de ejes en SVG scatter plots */
+.axis-label {
+  font-size: 9px;
+  fill: rgba(80, 80, 100, 0.75);
+  font-family: 'Inter', 'Roboto', sans-serif;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -907,6 +916,7 @@
   to { transform: translateX(0); }
 }
 
+
 /* ==================== DENDROGRAMA STYLES ==================== */
 .dendrogram-outer-container {
   width: 100%;
@@ -1000,4 +1010,98 @@
   padding: 10px 14px;
   border-radius: 10px;
   line-height: 1.5;
+
+
+/* Dendrogram Styles */
+.dendrogram-card {
+  width: 100%;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dendrogram-controls {
+  margin-bottom: 1.5rem;
+  background-color: #F8FAFC;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.slider-label {
+  font-size: 1rem;
+  color: #1E293B;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge-k {
+  background: var(--primary-purple, #7C3AED);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.9rem;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.slider-min, .slider-max {
+  font-size: 0.85rem;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.range-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #E2E8F0;
+  outline: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-purple, #7C3AED);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 6px rgba(124, 58, 237, 0.1);
+}
+
+.dendro-svg {
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 8px;
+  background: white;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.dendro-path {
+  transition: stroke 0.3s ease;
+}
+
+.cut-line {
+  transition: y1 0.3s ease, y2 0.3s ease;
+}
+.cut-line-text {
+  font-size: 12px;
+  font-weight: bold;
+  transition: y 0.3s ease;
+
 }

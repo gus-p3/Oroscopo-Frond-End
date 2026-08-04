@@ -56,7 +56,10 @@
             <svg viewBox="0 0 560 280" class="pca-svg">
               <line x1="35" y1="245" x2="525" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
               <line x1="35" y1="35" x2="35" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              
+              <!-- Etiqueta eje X -->
+              <text x="280" y="275" text-anchor="middle" class="axis-label">PC1 (Componente Principal 1)</text>
+              <!-- Etiqueta eje Y (rotada) -->
+              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">PC2 (Componente Principal 2)</text>
               @for (point of pcaPoints; track point.cx + '-' + point.cy) {
                 <circle 
                   [attr.cx]="point.cx" 
@@ -98,7 +101,10 @@
             <svg viewBox="0 0 560 280" class="pca-svg">
               <line x1="35" y1="245" x2="525" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
               <line x1="35" y1="35" x2="35" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              
+              <!-- Etiqueta eje X -->
+              <text x="280" y="275" text-anchor="middle" class="axis-label">PC1 (Posición en Componente Principal)</text>
+              <!-- Etiqueta eje Y (rotada) -->
+              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">Distancia al Centroide</text>
               @for (point of centroidDistancePoints; track point.cx + '-' + point.cy) {
                 <circle 
                   [attr.cx]="point.cx" 
@@ -140,7 +146,10 @@
             <svg viewBox="0 0 560 280" class="pca-svg">
               <line x1="45" y1="235" x2="515" y2="235" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
               <line x1="45" y1="45" x2="45" y2="235" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              
+              <!-- Etiqueta eje X -->
+              <text x="280" y="275" text-anchor="middle" class="axis-label">Elemento del Signo Zodiacal (Fuego · Agua · Tierra · Aire)</text>
+              <!-- Etiqueta eje Y (rotada) -->
+              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">Elemento del Cuestionario</text>
               @for (point of zodiacVsElementPoints; track point.cx + '-' + point.cy) {
                 <circle 
                   [attr.cx]="point.cx" 
@@ -182,7 +191,10 @@
             <svg viewBox="0 0 560 280" class="pca-svg">
               <line x1="35" y1="245" x2="525" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
               <line x1="35" y1="35" x2="35" y2="245" stroke="rgba(0,0,0,0.08)" stroke-dasharray="4" />
-              
+              <!-- Etiqueta eje X -->
+              <text x="280" y="275" text-anchor="middle" class="axis-label">PC2 (Componente Principal 2)</text>
+              <!-- Etiqueta eje Y (rotada) -->
+              <text x="12" y="140" text-anchor="middle" class="axis-label" transform="rotate(-90,12,140)">−PC1 (Eje Invertido)</text>
               @for (point of rotatedPcaPoints; track point.cx + '-' + point.cy) {
                 <circle 
                   [attr.cx]="point.cx" 

@@ -293,20 +293,6 @@
                   <span class="form-hint">Criterio utilizado para calcular la distancia entre clusters.</span>
                 </div>
 
-                <div class="form-group">
-                  <label for="nClusters" class="form-label">Número de Clusters</label>
-                  <input 
-                    type="number" 
-                    id="nClusters" 
-                    class="form-control" 
-                    [(ngModel)]="nClusters" 
-                    min="2" 
-                    max="10" 
-                    placeholder="Ej. 3"
-                  />
-                  <span class="form-hint">Define la cantidad de grupos a formar al realizar el corte del árbol.</span>
-                </div>
-
                 <div class="form-group checkbox-group">
                   <label class="checkbox-label">
                     <input 
@@ -347,56 +333,7 @@
           }
         </section>
 
-        <!-- SECCIÓN DE BITÁCORA / HISTORIAL DE CORRIDAS (FLEX CARDS) -->
-        @if (bitacoraLogs.length > 0) {
-          <section class="bitacora-section">
-            <div class="config-card bitacora-card">
-              <div class="card-header">
-                <span class="config-icon">📋</span>
-                <div>
-                  <h2 class="config-title">Bitácora de Corridas Realizadas</h2>
-                  <p class="config-subtitle">Historial de ejecuciones durante esta sesión</p>
-                </div>
-              </div>
-              
-              <div class="table-container-glass">
-                <table class="bitacora-table">
-                  <thead>
-                    <tr>
-                      <th>Fecha / Hora</th>
-                      <th>Algoritmo</th>
-                      <th>Registros (Personas)</th>
-                      <th>Dimensiones (Preguntas)</th>
-                      <th>Parámetros</th>
-                      <th>Tiempo Respuesta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (log of bitacoraLogs; track log.fecha) {
-                      <tr>
-                        <td>{{ log.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
-                        <td><span class="algo-badge">{{ log.algoritmo }}</span></td>
-                        <td>{{ log.totalPersonas }}</td>
-                        <td>{{ log.totalPreguntas }}</td>
-                        <td>
-                          <span class="params-pill">
-                            @if (log.algoritmo === 'K-Means') {
-                              k = {{ log.parametros.k }}, pca = {{ log.parametros.pca ? 'Sí' : 'No' }}
-                            } @else {
-                              linkage = {{ log.parametros.metodoEnlace }}
-                            }
-                          </span>
-                        </td>
-                        <td><strong class="time-text">{{ log.tiempoRespuestaMs }} ms</strong></td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        }
-
+        <!-- SECCIÓN DE BITÁCORA MOVIDA A FASE 5 -->
         <!-- ABAJO DEL TODO: SELECCIÓN DE RESULTADOS Y GRÁFICAS (FULL WIDTH) -->
         <div class="full-results-wrapper">
           @if (selectedAlgorithmId === 'kmeans') {
@@ -445,6 +382,121 @@
             [loading]="isLoading">
           </app-hierarchical>
         }
+      </div>
+    }
+
+    <!-- FASE 5: BITÁCORA -->
+    @if (currentPhase === 'fase5') {
+      <div class="phase-card">
+        <div class="phase-header">
+          <h2>📋 Fase 5: Guardar en Bitácora</h2>
+          <p>Almacena la configuración y los resultados de la última ejecución en la base de datos.</p>
+        </div>
+        
+        <div class="phase-body">
+          @if (currentBitacoraPayload && currentBitacoraDisplay) {
+            <div class="config-card save-bitacora-card" style="margin-bottom: 2rem;">
+              <h3>¿Deseas guardar la última ejecución?</h3>
+              <p><strong>Algoritmo:</strong> {{ currentBitacoraDisplay.algoritmo }}</p>
+              <p><strong>Registros (Personas):</strong> {{ currentBitacoraDisplay.totalPersonas }}</p>
+              <p><strong>Dimensiones (Preguntas):</strong> {{ currentBitacoraDisplay.totalPreguntas }}
+                @if (currentBitacoraDisplay.preguntasDetalle) {
+                  <br><small style="color: #64748B;">{{ currentBitacoraDisplay.preguntasDetalle }}</small>
+                }
+              </p>
+              
+              <div class="form-actions" style="margin-top: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+                <button 
+                  class="btn-submit" 
+                  [disabled]="isSavingBitacora" 
+                  (click)="saveCurrentBitacora()"
+                >
+                  @if (isSavingBitacora) {
+                    <span class="btn-spinner"></span>
+                    <span>Guardando...</span>
+                  } @else {
+                    <span>💾 Guardar Ejecución</span>
+                  }
+                </button>
+
+                @if (bitacoraSuccessMessage) {
+                  <span class="success-text" style="color: #10B981; font-weight: 500;">✔️ {{ bitacoraSuccessMessage }}</span>
+                }
+              </div>
+            </div>
+          } @else if (!currentBitacoraPayload && bitacoraSuccessMessage) {
+            <div class="success-banner" style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10B981; padding: 1rem; margin-bottom: 2rem; border-radius: 8px;">
+              <span class="success-text" style="color: #10B981; font-weight: 500;">✔️ {{ bitacoraSuccessMessage }}</span>
+            </div>
+          } @else {
+            <div class="info-pill-row" style="margin-bottom: 2rem;">
+              <div class="info-pill">
+                <span>ℹ️ No hay ejecuciones pendientes por guardar. Ejecuta un algoritmo en la Fase 3 primero.</span>
+              </div>
+            </div>
+          }
+
+          <!-- SECCIÓN DE BITÁCORA / HISTORIAL DE CORRIDAS (FLEX CARDS) -->
+          @if (bitacoraLogs.length > 0) {
+            <section class="bitacora-section">
+              <div class="config-card bitacora-card">
+                <div class="card-header">
+                  <span class="config-icon">📋</span>
+                  <div>
+                    <h2 class="config-title">Historial de Corridas Guardadas</h2>
+                    <p class="config-subtitle">Ejecuciones almacenadas en la base de datos y la sesión actual</p>
+                  </div>
+                </div>
+                
+                <div class="table-container-glass">
+                  <table class="bitacora-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha / Hora</th>
+                        <th>Algoritmo</th>
+                        <th>Registros (Personas)</th>
+                        <th>Dimensiones (Preguntas)</th>
+                        <th>Parámetros</th>
+                        <th>Tiempo Respuesta</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (log of bitacoraLogs; track log._id || $index) {
+                        <tr>
+                          <td>{{ log.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                          <td><span class="algo-badge">{{ log.algoritmo }}</span></td>
+                          <td>{{ log.totalPersonas }}</td>
+                          <td>
+                            {{ log.totalPreguntas }}
+                            @if (log.preguntasDetalle) {
+                              <br><small style="color: #64748B; font-size: 11px;">{{ log.preguntasDetalle }}</small>
+                            }
+                          </td>
+                          <td>
+                            <span class="params-pill">
+                              @if (log.algoritmo === 'K-Means') {
+                                k = {{ log.parametros.k }}, pca = {{ log.parametros.pca ? 'Sí' : 'No' }}
+                              } @else {
+                                linkage = {{ log.parametros.metodoEnlace }}
+                              }
+                            </span>
+                          </td>
+                          <td><strong class="time-text">{{ log.tiempoRespuestaMs }} {{ log.tiempoRespuestaMs !== '-' ? 'ms' : '' }}</strong></td>
+                          <td>
+                            <button class="btn-action-sm" (click)="verResultadosHistoricos(log)" [disabled]="!log.resultadoCompleto" title="Cargar resultados históricos">
+                              👁️ Ver
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          }
+        </div>
       </div>
     }
 
