@@ -912,14 +912,24 @@ export class HierarchicalComponent implements OnChanges {
   exportResultsJSON() {
     if (!this.data) return;
 
+    const pcaCoords: number[][] = this.data.result?.pca2d || this.data.result?.pca_2d || [];
+
+    // Enriquecer cada persona con sus coordenadas PCA individuales
+    const personasConPCA = (this.data.personas || []).map((p: any, idx: number) => ({
+      ...p,
+      pc1: pcaCoords[idx]?.[0] ?? null,
+      pc2: pcaCoords[idx]?.[1] ?? null
+    }));
+
     const payload = {
       algoritmo: 'Clusterización Jerárquica',
       exportedAt: new Date().toISOString(),
       nClusters: this.localK,
       metodoEnlace: this.data.result?.metodoEnlace || 'ward',
-      totalMuestras: this.data.personas?.length || 0,
+      totalMuestras: personasConPCA.length,
       linkageMatrix: this.data.result?.linkageMatrix || this.data.result?.linkage_matrix,
-      personas: this.data.personas
+      pca_2d: pcaCoords,
+      personas: personasConPCA
     };
 
     const jsonContent = JSON.stringify(payload, null, 2);
