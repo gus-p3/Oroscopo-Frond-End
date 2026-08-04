@@ -422,4 +422,131 @@ export class DashboardComponent implements OnInit {
       }
     });
   }
+
+  // ─── MÉTODOS DE EXPORTACIÓN (CSV / JSON) ──────────────────────────────────
+
+  private downloadFile(content: string, filename: string, mimeType: string) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  private escapeCSV(value: any): string {
+    if (value === null || value === undefined) return '""';
+    const str = String(value).replace(/"/g, '""');
+    return `"${str}"`;
+  }
+
+  exportPersonasCSV() {
+    const selected = this.personas.filter(p => this.personaIdsSeleccionadas.includes(p._id));
+    const list = selected.length > 0 ? selected : this.personas;
+
+    const headers = [
+      'ID', 
+      'Nombre', 
+      'Género', 
+      'Signo Zodiacal', 
+      'Elemento Signo', 
+      'Elemento Predominante', 
+      'Puntaje Fuego', 
+      'Puntaje Tierra', 
+      'Puntaje Aire', 
+      'Puntaje Agua', 
+      'Fecha Registro'
+    ];
+
+    const rows = list.map(p => [
+      this.escapeCSV(p._id),
+      this.escapeCSV(p.nombre),
+      this.escapeCSV(p.genero),
+      this.escapeCSV(p.signoZodiacal),
+      this.escapeCSV(p.elementoSigno),
+      this.escapeCSV(p.elementoPredominante),
+      this.escapeCSV(p.puntajes?.Fuego ?? 0),
+      this.escapeCSV(p.puntajes?.Tierra ?? 0),
+      this.escapeCSV(p.puntajes?.Aire ?? 0),
+      this.escapeCSV(p.puntajes?.Agua ?? 0),
+      this.escapeCSV(p.fechaRegistro ? new Date(p.fechaRegistro).toISOString() : '')
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.downloadFile(csvContent, `personas_export_${dateStr}.csv`, 'text/csv;charset=utf-8;');
+  }
+
+  exportPersonasJSON() {
+    const selected = this.personas.filter(p => this.personaIdsSeleccionadas.includes(p._id));
+    const list = selected.length > 0 ? selected : this.personas;
+
+    const jsonContent = JSON.stringify(list, null, 2);
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.downloadFile(jsonContent, `personas_export_${dateStr}.json`, 'application/json');
+  }
+
+  exportDatasetCSV() {
+    const selectedPersonas = this.personas.filter(p => this.personaIdsSeleccionadas.includes(p._id));
+    const listPersonas = selectedPersonas.length > 0 ? selectedPersonas : this.personas;
+
+    const selectedPreguntas = this.preguntas.filter(q => this.preguntaIdsSeleccionadas.includes(q._id));
+
+    const headers = [
+      'ID', 
+      'Nombre', 
+      'Género', 
+      'Signo Zodiacal', 
+      'Elemento Signo', 
+      'Elemento Predominante',
+      'Puntaje Fuego', 
+      'Puntaje Tierra', 
+      'Puntaje Aire', 
+      'Puntaje Agua',
+      ...selectedPreguntas.map(q => `P${q.numero}_${q.aspectoId || 'Aspecto'}`)
+    ];
+
+    const rows = listPersonas.map(p => [
+      this.escapeCSV(p._id),
+      this.escapeCSV(p.nombre),
+      this.escapeCSV(p.genero),
+      this.escapeCSV(p.signoZodiacal),
+      this.escapeCSV(p.elementoSigno),
+      this.escapeCSV(p.elementoPredominante),
+      this.escapeCSV(p.puntajes?.Fuego ?? 0),
+      this.escapeCSV(p.puntajes?.Tierra ?? 0),
+      this.escapeCSV(p.puntajes?.Aire ?? 0),
+      this.escapeCSV(p.puntajes?.Agua ?? 0),
+      ...selectedPreguntas.map(() => '""')
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.downloadFile(csvContent, `dataset_seleccionado_${dateStr}.csv`, 'text/csv;charset=utf-8;');
+  }
+
+  exportDatasetJSON() {
+    const selectedPersonas = this.personas.filter(p => this.personaIdsSeleccionadas.includes(p._id));
+    const listPersonas = selectedPersonas.length > 0 ? selectedPersonas : this.personas;
+
+    const selectedPreguntas = this.preguntas.filter(q => this.preguntaIdsSeleccionadas.includes(q._id));
+
+    const datasetPayload = {
+      exportedAt: new Date().toISOString(),
+      totalPersonasSeleccionadas: listPersonas.length,
+      totalPreguntasSeleccionadas: selectedPreguntas.length,
+      preguntasSeleccionadas: selectedPreguntas.map(q => ({
+        _id: q._id,
+        numero: q.numero,
+        texto: q.texto,
+        aspectoId: q.aspectoId
+      })),
+      personas: listPersonas
+    };
+
+    const jsonContent = JSON.stringify(datasetPayload, null, 2);
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.downloadFile(jsonContent, `dataset_seleccionado_${dateStr}.json`, 'application/json');
+  }
 }

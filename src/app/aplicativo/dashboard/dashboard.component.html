@@ -14,8 +14,18 @@
             <h2>👥 Fase 1: Selección de Personas</h2>
             <p>Selecciona o filtra los registros de personas almacenados en la base de datos para incluirlos en el análisis de agrupamiento.</p>
           </div>
-          <div class="selection-status-badge">
-            Seleccionadas: <strong>{{ personaIdsSeleccionadas.length }}</strong> / {{ personas.length }}
+          <div class="header-actions-wrapper">
+            <div class="selection-status-badge">
+              Seleccionadas: <strong>{{ personaIdsSeleccionadas.length }}</strong> / {{ personas.length }}
+            </div>
+            <div class="export-btn-group">
+              <button type="button" class="btn-export btn-export-csv" (click)="exportPersonasCSV()" title="Exportar personas a CSV">
+                <span>📊 Exportar CSV</span>
+              </button>
+              <button type="button" class="btn-export btn-export-json" (click)="exportPersonasJSON()" title="Exportar personas a JSON">
+                <span>📄 Exportar JSON</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -105,6 +115,14 @@
           </div>
 
           <div class="phase-actions-footer">
+            <div class="export-btn-group">
+              <button type="button" class="btn-export btn-export-csv" (click)="exportPersonasCSV()" title="Exportar personas a CSV">
+                <span>📊 Exportar CSV</span>
+              </button>
+              <button type="button" class="btn-export btn-export-json" (click)="exportPersonasJSON()" title="Exportar personas a JSON">
+                <span>📄 Exportar JSON</span>
+              </button>
+            </div>
             <button class="btn-next" (click)="onPhaseChange('fase2')">Continuar a Selección de Preguntas →</button>
           </div>
         </div>
@@ -119,8 +137,18 @@
             <h2>❓ Fase 2: Selección de Preguntas</h2>
             <p>Selecciona cuáles preguntas o aspectos del cuestionario zodiacal formarán las dimensiones del dataset.</p>
           </div>
-          <div class="selection-status-badge">
-            Seleccionadas: <strong>{{ preguntaIdsSeleccionadas.length }}</strong> / {{ preguntas.length }}
+          <div class="header-actions-wrapper">
+            <div class="selection-status-badge">
+              Seleccionadas: <strong>{{ preguntaIdsSeleccionadas.length }}</strong> / {{ preguntas.length }}
+            </div>
+            <div class="export-btn-group">
+              <button type="button" class="btn-export btn-export-csv" (click)="exportDatasetCSV()" title="Exportar dataset completo a CSV">
+                <span>📊 Exportar Dataset CSV</span>
+              </button>
+              <button type="button" class="btn-export btn-export-json" (click)="exportDatasetJSON()" title="Exportar dataset completo a JSON">
+                <span>📄 Exportar Dataset JSON</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -159,6 +187,14 @@
           </div>
 
           <div class="phase-actions-footer">
+            <div class="export-btn-group">
+              <button type="button" class="btn-export btn-export-csv" (click)="exportDatasetCSV()" title="Exportar dataset completo a CSV">
+                <span>📊 Exportar Dataset CSV</span>
+              </button>
+              <button type="button" class="btn-export btn-export-json" (click)="exportDatasetJSON()" title="Exportar dataset completo a JSON">
+                <span>📄 Exportar Dataset JSON</span>
+              </button>
+            </div>
             <button class="btn-next" (click)="onPhaseChange('fase3')">Continuar a Selección de Algoritmo →</button>
           </div>
         </div>
