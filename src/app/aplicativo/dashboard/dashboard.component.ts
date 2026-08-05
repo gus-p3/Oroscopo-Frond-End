@@ -5,7 +5,7 @@ import { NavBarComponent } from '../nav-bar/nav-bar.component';
 import { SelectAlgoritmComponent, AlgoritmItem } from '../components/select-algoritm/select-algoritm.component';
 import { KMeansComponent } from '../components/k-means/k-means.component';
 import { HierarchicalComponent } from '../components/hierarchical/hierarchical.component';
-import { AlgorithmService, KMeansResultResponse, HierarchicalResultResponse, ElbowResultResponse } from '../../services/algorithm.service';
+import { AlgorithmService, KMeansResultResponse, HierarchicalResultResponse, ElbowResultResponse, KMeansParams, HierarchicalParams } from '../../services/algorithm.service';
 import { ApiService } from '../../services/api.service';
 
 @Component({
@@ -75,6 +75,13 @@ export class DashboardComponent implements OnInit {
   isSavingBitacora: boolean = false;
   bitacoraSuccessMessage: string = '';
 
+  // Estado de Importación CSV
+  isImporting: boolean = false;
+  importSuccessMessage: string = '';
+  importSummary: any = null;
+  isUsingImportedData: boolean = false;
+  importedPersonas: any[] = [];
+
   ngOnInit() {
     this.cargarHistorialBitacora();
     // Cargar catálogos para filtros
@@ -84,18 +91,8 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    // Cargar todas las personas registradas con puntajes
-    this.apiService.getPersonas(0, 0).subscribe({
-      next: (res) => {
-        this.personas = res.personas || [];
-        this.personasFiltradas = [...this.personas];
-        // Seleccionar todas por defecto
-        this.personaIdsSeleccionadas = this.personas.map(p => p._id);
-      },
-      error: (err) => {
-        console.error('Error al cargar personas:', err);
-      }
-    });
+    // No cargamos personas desde DB para mostrar, solo del CSV.
+    this.cargarPersonas();
 
     // Cargar las preguntas del cuestionario
     this.apiService.getCuestionario().subscribe({
@@ -108,6 +105,134 @@ export class DashboardComponent implements OnInit {
         console.error('Error al cargar preguntas:', err);
       }
     });
+  }
+
+  cargarPersonas() {
+    this.personas = [];
+    this.personasFiltradas = [];
+    this.personaIdsSeleccionadas = [];
+  }
+
+  importarPersonasCSV(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.isImporting = true;
+    this.errorMessage = '';
+    this.importSuccessMessage = '';
+    this.importSummary = null;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const csvText = e.target.result;
+      this.apiService.importarCSV(csvText).subscribe({
+        next: (res: any[]) => {
+          this.isImporting = false;
+          this.importedPersonas = (res || []).map(p => ({
+            ...p,
+            _id: p.tempId,
+            id: p.tempId
+          }));
+          this.isUsingImportedData = true;
+
+          const validos = this.importedPersonas.filter(p => p.valido);
+          const invalidos = this.importedPersonas.filter(p => !p.valido);
+
+          // Por defecto seleccionamos todas las personas válidas
+          this.personaIdsSeleccionadas = validos.map(p => p.tempId);
+          this.importSuccessMessage = `Registros válidos: ${validos.length}, con inconsistencias: ${invalidos.length}. Los válidos están seleccionados por defecto. Puedes revisar todos en la tabla.`;
+          
+          this.importSummary = {
+            totalProcesados: this.importedPersonas.length,
+            totalValidos: validos.length,
+            totalInvalidos: invalidos.length,
+            detallesErrores: invalidos.map((p, idx) => ({
+              rowNumber: idx + 1,
+              nombre: p.nombre,
+              errores: p.errores
+            }))
+          };
+
+          this.filtrarPersonas();
+          event.target.value = '';
+        },
+        error: (err) => {
+          this.isImporting = false;
+          this.errorMessage = err?.error?.message || 'Error al importar archivo CSV.';
+          event.target.value = '';
+        }
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  ignorarInconsistentes() {
+    if (!this.isUsingImportedData) return;
+    const invalidIds = this.importedPersonas.filter(p => !p.valido).map(p => p.tempId);
+    this.personaIdsSeleccionadas = this.personaIdsSeleccionadas.filter(id => !invalidIds.includes(id));
+  }
+
+  restaurarBaseDatos() {
+    this.isUsingImportedData = false;
+    this.importedPersonas = [];
+    this.personasFiltradas = [];
+    this.personaIdsSeleccionadas = [];
+    this.importSuccessMessage = '';
+    this.importSummary = null;
+  }
+
+  getCustomDatasetPayload() {
+    if (!this.isUsingImportedData) return null;
+
+    const selectedPersonas = this.importedPersonas.filter(p => this.personaIdsSeleccionadas.includes(p.tempId));
+    
+    const dataset = selectedPersonas.map(p => {
+      const row: any = {};
+      this.preguntaIdsSeleccionadas.forEach(qId => {
+        if (p.respuestas[qId] !== undefined) {
+          row[qId] = p.respuestas[qId];
+        }
+      });
+      return row;
+    });
+
+    const ids = selectedPersonas.map(p => p.tempId);
+    
+    const personasMapped = selectedPersonas.map(p => {
+      // Map respuestas to aspects using Cached questions
+      const aspectosMap = new Map<string, number>();
+      this.preguntas.forEach(q => {
+        const val = p.respuestas[q._id];
+        if (val !== undefined && (q as any).aspectoNombre) {
+          aspectosMap.set((q as any).aspectoNombre, val);
+        }
+      });
+
+      // Map puntajes to array entries format
+      const puntajesElementos = Object.entries(p.puntajes || {});
+
+      return {
+        _id: p.tempId,
+        id: p.tempId,
+        nombre: p.nombre,
+        genero: p.genero,
+        signoZodiacal: p.signoZodiacal,
+        elementoSigno: p.elementoSigno,
+        elementoPredominante: p.elementoPredominante,
+        elementoEncuesta: p.elementoPredominante,
+        elementoPredominanteId: p.elementoPredominante,
+        elementoNombre: p.elementoPredominante,
+        puntajes: p.puntajes || {},
+        puntajesElementos,
+        aspectos: Array.from(aspectosMap.entries())
+      };
+    });
+
+    return {
+      dataset,
+      ids,
+      personas: personasMapped
+    };
   }
 
   cargarHistorialBitacora() {
@@ -154,9 +279,9 @@ export class DashboardComponent implements OnInit {
     }, 300);
   }
 
-  // Filtrado de personas en Fase 1
   filtrarPersonas() {
-    this.personasFiltradas = this.personas.filter(p => {
+    const listToFilter = this.isUsingImportedData ? this.importedPersonas : this.personas;
+    this.personasFiltradas = listToFilter.filter(p => {
       const matchesSearch = !this.searchPersona || p.nombre.toLowerCase().includes(this.searchPersona.toLowerCase());
       const matchesGender = this.filterPersonaGender === 'all' || p.genero === this.filterPersonaGender;
       const matchesSign = this.filterPersonaSign === 'all' || p.signoZodiacal === this.filterPersonaSign;
@@ -234,8 +359,9 @@ export class DashboardComponent implements OnInit {
     this.isCalculatingElbow = true;
     this.errorMessage = '';
     
-    // Pasar los IDs de personas y preguntas seleccionadas para que el cálculo coincida
-    this.algorithmService.executeElbow(10, this.personaIdsSeleccionadas, this.preguntaIdsSeleccionadas).subscribe({
+    const customDataset = this.isUsingImportedData ? this.getCustomDatasetPayload() : null;
+
+    this.algorithmService.executeElbow(10, this.personaIdsSeleccionadas, this.preguntaIdsSeleccionadas, customDataset).subscribe({
       next: (res) => {
         this.elbowData = res;
         this.isCalculatingElbow = false;
@@ -291,19 +417,22 @@ export class DashboardComponent implements OnInit {
     const inicioMs = Date.now();
 
     if (this.selectedAlgorithmId === 'kmeans') {
-      const payload = {
+      const payload: KMeansParams = {
         k: Number(this.kValue),
         incluirPCA: this.incluirPCA,
         ids: this.personaIdsSeleccionadas,
         questions: this.preguntaIdsSeleccionadas
       };
 
+      if (this.isUsingImportedData) {
+        payload.customDataset = this.getCustomDatasetPayload();
+      }
+
       this.algorithmService.executeKMeans(payload).subscribe({
         next: (res) => {
           this.kmeansData = res;
           this.isLoading = false;
 
-          // Preparar los datos para la Fase 6 de Bitácora
           const clusterSizes: Record<number, number> = {};
           if (res.result && res.result.labels) {
             for (const label of res.result.labels) {
@@ -311,13 +440,13 @@ export class DashboardComponent implements OnInit {
             }
           }
           
-          const preguntasUsadas = this.preguntas.filter(q => payload.questions.includes(q._id));
+          const preguntasUsadas = this.preguntas.filter(q => payload.questions!.includes(q._id));
           const preguntasDetalle = preguntasUsadas.map(q => `P${q.numero}`).join(', ');
 
           this.currentBitacoraPayload = {
             algoritmo: 'kmeans',
             parametrosUsados: { k: payload.k, incluirPCA: payload.incluirPCA },
-            filtrosDataset: { totalRegistros: payload.ids.length, totalPreguntas: payload.questions.length, preguntasDetalle },
+            filtrosDataset: { totalRegistros: payload.ids!.length, totalPreguntas: payload.questions!.length, preguntasDetalle },
             resumenResultados: {
                 numClusters: payload.k,
                 inercia: res.result.inercia,
@@ -329,8 +458,8 @@ export class DashboardComponent implements OnInit {
           this.currentBitacoraDisplay = {
             fecha: new Date(),
             algoritmo: 'K-Means',
-            totalPersonas: payload.ids.length || this.personas.length || 'Todas',
-            totalPreguntas: payload.questions.length || this.preguntas.length || 'Todas',
+            totalPersonas: payload.ids!.length || this.personas.length || 'Todas',
+            totalPreguntas: payload.questions!.length || this.preguntas.length || 'Todas',
             preguntasDetalle,
             parametros: { k: payload.k, pca: payload.incluirPCA },
             tiempoRespuestaMs: Date.now() - inicioMs,
@@ -344,26 +473,29 @@ export class DashboardComponent implements OnInit {
         }
       });
     } else if (this.selectedAlgorithmId === 'jerarquico') {
-      const payload = {
+      const payload: HierarchicalParams = {
         metodoEnlace: this.metodoEnlace,
         incluirPCA: this.incluirPCA,
         ids: this.personaIdsSeleccionadas,
         questions: this.preguntaIdsSeleccionadas
       };
 
+      if (this.isUsingImportedData) {
+        payload.customDataset = this.getCustomDatasetPayload();
+      }
+
       this.algorithmService.executeHierarchical(payload).subscribe({
         next: (res) => {
           this.hierarchicalData = res;
           this.isLoading = false;
 
-          // Preparar los datos para la Fase 6 de Bitácora
           const clusterSizes: Record<number, number> = {};
           const labels = res.result.labels || [];
           for (const label of labels) {
             clusterSizes[label] = (clusterSizes[label] || 0) + 1;
           }
 
-          const preguntasUsadas = this.preguntas.filter(q => payload.questions.includes(q._id));
+          const preguntasUsadas = this.preguntas.filter(q => payload.questions!.includes(q._id));
           const preguntasDetalle = preguntasUsadas.map(q => `P${q.numero}`).join(', ');
 
           this.currentBitacoraPayload = {
@@ -372,7 +504,7 @@ export class DashboardComponent implements OnInit {
                 metodoEnlace: payload.metodoEnlace,
                 incluirPCA: payload.incluirPCA
             },
-            filtrosDataset: { totalRegistros: payload.ids.length, totalPreguntas: payload.questions.length, preguntasDetalle },
+            filtrosDataset: { totalRegistros: payload.ids!.length, totalPreguntas: payload.questions!.length, preguntasDetalle },
             resumenResultados: {
                 linkageMatrixLength: res.result.linkageMatrix?.length || res.result.linkage_matrix?.length || 0,
                 metodoEnlace: payload.metodoEnlace,
@@ -384,8 +516,8 @@ export class DashboardComponent implements OnInit {
           this.currentBitacoraDisplay = {
             fecha: new Date(),
             algoritmo: 'Clusterización Jerárquica',
-            totalPersonas: payload.ids.length || this.personas.length || 'Todas',
-            totalPreguntas: payload.questions.length || this.preguntas.length || 'Todas',
+            totalPersonas: payload.ids!.length || this.personas.length || 'Todas',
+            totalPreguntas: payload.questions!.length || this.preguntas.length || 'Todas',
             preguntasDetalle,
             parametros: { metodoEnlace: payload.metodoEnlace },
             tiempoRespuestaMs: Date.now() - inicioMs,

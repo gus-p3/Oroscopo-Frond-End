@@ -18,6 +18,7 @@ const ELEMENTO_META: Record<string, { emoji: string; color: string; gradient: st
 })
 export class PersonaDetailComponent implements OnInit, OnChanges {
   @Input() idPersona?: string;
+  @Input() personaData?: any;
   @Output() close = new EventEmitter<void>();
 
   datosUsuario: any = null;
@@ -32,15 +33,59 @@ export class PersonaDetailComponent implements OnInit, OnChanges {
   private personaService = inject(PersonaService);
 
   ngOnInit(): void {
-    if (this.idPersona) {
+    if (this.personaData) {
+      this.cargarDetallesDesdeObjeto(this.personaData);
+    } else if (this.idPersona) {
       this.cargarDetalles(this.idPersona);
     }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['idPersona'] && this.idPersona) {
+    if (changes['personaData'] && this.personaData) {
+      this.cargarDetallesDesdeObjeto(this.personaData);
+    } else if (changes['idPersona'] && this.idPersona) {
       this.cargarDetalles(this.idPersona);
     }
+  }
+
+  cargarDetallesDesdeObjeto(data: any) {
+    this.loading = true;
+    this.errorMessage = '';
+    this.elementoGanador = null;
+    this.ganadorMeta = null;
+
+    this.datosUsuario = data;
+    this.aspectosList = data.aspectos || [];
+
+    const rawElementos = data.puntajesElementos || [];
+    let maxPuntaje = 0;
+    rawElementos.forEach(([_, p]: [string, number]) => {
+      if (p > maxPuntaje) maxPuntaje = p;
+    });
+
+    this.elementosList = rawElementos.map(([nombreElemento, puntajeTotal]: [string, number]) => {
+      const isWinner = nombreElemento === data.elementoNombre || puntajeTotal === maxPuntaje;
+      const meta = ELEMENTO_META[nombreElemento] ?? {
+        emoji: '✦',
+        color: '#a78bfa',
+        gradient: 'linear-gradient(135deg, #a78bfa, #7c3aed)'
+      };
+
+      if (isWinner && !this.elementoGanador) {
+        this.elementoGanador = { nombre: nombreElemento, puntajeTotal };
+        this.ganadorMeta = meta;
+      }
+
+      return {
+        nombre: nombreElemento,
+        puntajeTotal,
+        porcentaje: maxPuntaje > 0 ? Math.round((puntajeTotal / maxPuntaje) * 100) : 0,
+        esPredominante: isWinner,
+        meta
+      };
+    });
+
+    this.loading = false;
   }
 
   cargarDetalles(id: string) {

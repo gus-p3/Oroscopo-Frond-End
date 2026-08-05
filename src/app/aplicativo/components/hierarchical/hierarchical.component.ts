@@ -322,15 +322,18 @@ export class HierarchicalComponent implements OnChanges {
 
   // Estado del Panel Lateral (Offcanvas Drawer)
   selectedPersonaId: string | null = null;
+  selectedPersonaData: any = null;
 
-  openPersonaDetail(id: string) {
-    if (id) {
-      this.selectedPersonaId = id;
+  openPersonaDetail(person: any) {
+    if (person) {
+      this.selectedPersonaId = person.id || person._id;
+      this.selectedPersonaData = person;
     }
   }
 
   closePersonaDetail() {
     this.selectedPersonaId = null;
+    this.selectedPersonaData = null;
   }
 
   // Estado de Filtros de la Tabla

@@ -8,6 +8,7 @@ export interface KMeansParams {
   incluirPCA?: boolean;
   ids?: string[];
   questions?: string[];
+  customDataset?: any;
 }
 
 export interface HierarchicalParams {
@@ -16,6 +17,7 @@ export interface HierarchicalParams {
   incluirPCA?: boolean;
   ids?: string[];
   questions?: string[];
+  customDataset?: any;
 }
 
 export interface PersonaCluster {
@@ -87,7 +89,7 @@ export class AlgorithmService {
     return this.http.post<HierarchicalResultResponse>(`${this.apiUrl}/jerarquico`, params);
   }
 
-  executeElbow(kMax: number = 10, ids?: string[], questions?: string[]): Observable<ElbowResultResponse> {
-    return this.http.post<ElbowResultResponse>(`${this.apiUrl}/elbow`, { kMax, ids, questions });
+  executeElbow(kMax: number = 10, ids?: string[], questions?: string[], customDataset?: any): Observable<ElbowResultResponse> {
+    return this.http.post<ElbowResultResponse>(`${this.apiUrl}/elbow`, { kMax, ids, questions, customDataset });
   }
 }

@@ -98,4 +98,10 @@ export class ApiService {
     }
     return this.http.post<any>(`${this.apiUrl}/personas/export-dataset`, payload);
   }
+
+  importarCSV(csvText: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/personas/importar`, csvText, {
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  }
 }

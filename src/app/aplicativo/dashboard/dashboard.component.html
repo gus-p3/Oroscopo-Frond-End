@@ -16,9 +16,23 @@
           </div>
           <div class="header-actions-wrapper">
             <div class="selection-status-badge">
-              Seleccionadas: <strong>{{ personaIdsSeleccionadas.length }}</strong> / {{ personas.length }}
+              Seleccionadas: <strong>{{ personaIdsSeleccionadas.length }}</strong> / {{ (isUsingImportedData ? importedPersonas.length : personas.length) }}
             </div>
+            @if (isUsingImportedData) {
+              <div class="export-btn-group">
+                <button type="button" class="btn-export btn-ignore-invalid" (click)="ignorarInconsistentes()" title="Deseleccionar todos los registros con errores">
+                  <span>🚫 Ignorar Incoherentes</span>
+                </button>
+                <button type="button" class="btn-export btn-restore-db" (click)="restaurarBaseDatos()" title="Volver a los datos de la Base de Datos">
+                  <span>🔄 Usar Base de Datos</span>
+                </button>
+              </div>
+            }
             <div class="export-btn-group">
+              <button type="button" class="btn-export btn-import-csv" (click)="fileInput.click()" title="Importar personas desde CSV" [disabled]="isImporting">
+                <span>📥 Importar CSV</span>
+              </button>
+              <input #fileInput type="file" (change)="importarPersonasCSV($event)" accept=".csv" style="display: none;" />
               <button type="button" class="btn-export btn-export-csv" (click)="exportPersonasCSV()" title="Exportar personas a CSV">
                 <span>📊 Exportar CSV</span>
               </button>
@@ -30,6 +44,52 @@
         </div>
 
         <div class="phase-body">
+          <!-- Mensajes e información de importación CSV -->
+          @if (isImporting) {
+            <div class="info-banner">
+              <span class="btn-spinner-sm" style="display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.75s linear infinite; margin-right: 8px;"></span>
+              <span>Procesando e importando archivo CSV...</span>
+            </div>
+          }
+          @if (importSuccessMessage) {
+            <div class="success-banner">
+              <span class="success-icon">✓</span>
+              <span>{{ importSuccessMessage }}</span>
+              <button class="btn-close-banner" (click)="importSuccessMessage = ''">×</button>
+            </div>
+          }
+          @if (importSummary && importSummary.totalInvalidos > 0) {
+            <div class="error-details-card">
+              <h4>⚠️ Registros omitidos/corregidos durante la importación ({{ importSummary.totalInvalidos }})</h4>
+              <div class="errors-list-wrapper">
+                <table class="errors-table">
+                  <thead>
+                    <tr>
+                      <th>Fila</th>
+                      <th>Nombre</th>
+                      <th>Errores / Motivos de descarte</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (err of importSummary.detallesErrores; track err.rowNumber) {
+                      <tr>
+                        <td>{{ err.rowNumber }}</td>
+                        <td>{{ err.nombre || 'N/A' }}</td>
+                        <td>
+                          <ul>
+                            @for (msg of err.errores; track msg) {
+                              <li>{{ msg }}</li>
+                            }
+                          </ul>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+
           <!-- Filtros de Personas -->
           <div class="selection-filters-row">
             <div class="filter-input-group">
@@ -89,6 +149,7 @@
                 @for (p of personasFiltradas; track p._id) {
                   <tr 
                     [class.row-selected]="isPersonaSelected(p._id)"
+                    [class.row-invalid]="isUsingImportedData && !p.valido"
                     (click)="togglePersonaSelection(p._id)"
                   >
                     <td class="td-checkbox" (click)="$event.stopPropagation()">
@@ -99,7 +160,12 @@
                         (change)="togglePersonaSelection(p._id)"
                       />
                     </td>
-                    <td class="td-name">{{ p.nombre }}</td>
+                    <td class="td-name">
+                      {{ p.nombre }}
+                      @if (isUsingImportedData && !p.valido) {
+                        <span class="text-danger-warn" [title]="p.errores.join('\n')" style="cursor: help; margin-left: 6px;">⚠️</span>
+                      }
+                    </td>
                     <td>{{ p.genero }}</td>
                     <td>{{ p.signoZodiacal }}</td>
                     <td><span class="badge-elemento badge-{{ p.elementoSigno | lowercase }}">{{ p.elementoSigno }}</span></td>
@@ -107,7 +173,13 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="6" class="td-empty">No se encontraron personas con los filtros seleccionados.</td>
+                    <td colspan="6" class="td-empty" style="padding: 40px !important;">
+                      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <span style="font-size: 24px;">📥</span>
+                        <span style="font-weight: 600; color: #475569;">No hay datos cargados</span>
+                        <span style="font-size: 13px; color: #64748B;">Haz clic en "Importar CSV" en la parte superior derecha para cargar las personas del cuestionario.</span>
+                      </div>
+                    </td>
                   </tr>
                 }
               </tbody>

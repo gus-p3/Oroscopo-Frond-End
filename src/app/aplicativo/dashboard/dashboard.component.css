@@ -771,3 +771,200 @@ app-nav-bar {
   transform: translateY(0);
 }
 
+/* ESTILOS BOTÓN DE IMPORTACIÓN CSV */
+.btn-import-csv {
+  background: rgba(124, 58, 237, 0.1);
+  color: #7c3aed;
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.btn-import-csv:hover {
+  background: #7c3aed;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-import-csv:active {
+  transform: translateY(0);
+}
+
+/* BANNERS DE INFORMACIÓN Y ÉXITO PARA LA IMPORTACIÓN */
+.info-banner, .success-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  position: relative;
+  animation: fadeInDown 0.25s ease-out;
+}
+
+.info-banner {
+  background: rgba(2, 132, 199, 0.08);
+  color: #0284c7;
+  border: 1px solid rgba(2, 132, 199, 0.2);
+}
+
+.success-banner {
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding-right: 40px; /* dejar espacio para el botón de cerrar */
+}
+
+.success-icon {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.btn-close-banner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.btn-close-banner:hover {
+  opacity: 1;
+}
+
+/* TARJETA DE DETALLE DE ERRORES */
+.error-details-card {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.02);
+}
+
+.error-details-card h4 {
+  margin: 0 0 12px 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.errors-list-wrapper {
+  max-height: 250px;
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.errors-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.errors-table th, .errors-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.08);
+}
+
+.errors-table th {
+  background: rgba(239, 68, 68, 0.08);
+  font-weight: 700;
+  color: #b91c1c;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.errors-table td {
+  background: #ffffff;
+  color: #475569;
+}
+
+.errors-table tr:last-child td {
+  border-bottom: none;
+}
+
+.errors-table ul {
+  margin: 0;
+  padding-left: 16px;
+  color: #dc2626;
+}
+
+.errors-table li {
+  margin-bottom: 2px;
+}
+
+.errors-table li:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ESTILOS BOTONES TEMPORALES IMPORTACIÓN */
+.btn-ignore-invalid {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.btn-ignore-invalid:hover {
+  background: #dc2626;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-restore-db {
+  background: rgba(30, 27, 75, 0.1);
+  color: #1E1B4B;
+  border-color: rgba(30, 27, 75, 0.3);
+}
+
+.btn-restore-db:hover {
+  background: #1E1B4B;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(30, 27, 75, 0.3);
+  transform: translateY(-1px);
+}
+
+/* FILAS CON INCONSISTENCIAS / ERRORES */
+.selection-table tbody tr.row-invalid {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.selection-table tbody tr.row-invalid:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.text-danger-warn {
+  color: #dc2626;
+  font-weight: bold;
+}
+

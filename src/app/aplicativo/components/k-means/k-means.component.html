@@ -606,7 +606,7 @@
           </thead>
           <tbody>
             @for (person of paginatedRows; track person.id || person._id; let i = $index) {
-              <tr class="table-row clickable-row" (click)="openPersonaDetail(person.id || person._id)">
+              <tr class="table-row clickable-row" (click)="openPersonaDetail(person)">
                 <td class="td-num">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
                 <td class="td-person">
                   <span class="avatar-icon">👤</span>
@@ -641,7 +641,7 @@
                 <td class="td-center">
                   <button 
                     class="btn-view-detail" 
-                    (click)="$event.stopPropagation(); openPersonaDetail(person.id || person._id)"
+                    (click)="$event.stopPropagation(); openPersonaDetail(person)"
                     title="Ver aspectos de personalidad"
                   >
                     👁️ Aspectos
@@ -717,6 +717,7 @@
   <div class="drawer-slide-panel">
     <app-persona-detail 
       [idPersona]="selectedPersonaId" 
+      [personaData]="selectedPersonaData"
       (close)="closePersonaDetail()"
     ></app-persona-detail>
   </div>
