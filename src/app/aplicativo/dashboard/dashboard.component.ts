@@ -394,9 +394,41 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  // Mensaje de bloqueo de fase
+  phaseBlockMessage: string = '';
+  phaseBlockVisible: boolean = false;
+  private phaseBlockTimer: any = null;
+
+  get csvCargado(): boolean {
+    return this.importedPersonas.length > 0;
+  }
+
+  get resultadosListos(): boolean {
+    return !!(this.kmeansData || this.hierarchicalData);
+  }
+
   onPhaseChange(phaseId: string) {
+    // Fase 2 y 3 requieren CSV cargado
+    if ((phaseId === 'fase2' || phaseId === 'fase3') && !this.csvCargado) {
+      this.mostrarBloqueoFase('Primero debes cargar un dataset (CSV) en la Fase 1.');
+      return;
+    }
+    // Fase 4 requiere resultados de algoritmo
+    if (phaseId === 'fase4' && !this.resultadosListos) {
+      this.mostrarBloqueoFase('La Fase 4 solo está disponible después de ejecutar un algoritmo o al ver resultados desde la Bitácora.');
+      return;
+    }
     this.currentPhase = phaseId;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  mostrarBloqueoFase(mensaje: string) {
+    this.phaseBlockMessage = mensaje;
+    this.phaseBlockVisible = true;
+    if (this.phaseBlockTimer) clearTimeout(this.phaseBlockTimer);
+    this.phaseBlockTimer = setTimeout(() => {
+      this.phaseBlockVisible = false;
+    }, 3500);
   }
 
   onAlgorithmSelected(algorithm: AlgoritmItem) {

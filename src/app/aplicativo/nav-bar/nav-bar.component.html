@@ -8,10 +8,15 @@
             <li>
                 <a 
                   href="javascript:void(0)" 
-                  [class.active]="item.id === activePhase" 
+                  [class.active]="item.id === activePhase"
+                  [class.disabled-phase]="!isEnabled(item.id)"
+                  [title]="!isEnabled(item.id) ? 'No disponible aún' : item.nombre"
                   (click)="selectPhase(item.id)"
                 >
                   {{ item.nombre }}
+                  @if (!isEnabled(item.id)) {
+                    <span class="lock-icon">🔒</span>
+                  }
                 </a>
             </li>
         }

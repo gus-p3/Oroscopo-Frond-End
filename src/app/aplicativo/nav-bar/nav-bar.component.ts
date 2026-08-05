@@ -15,6 +15,7 @@ export interface NavItem {
 })
 export class NavBarComponent {
   @Input() activePhase: string = 'fase1';
+  @Input() enabledPhases: string[] = ['fase1', 'fase2', 'fase3', 'fase4', 'fase5'];
   @Output() phaseSelected = new EventEmitter<string>();
 
   navItems: NavItem[] = [
@@ -24,6 +25,10 @@ export class NavBarComponent {
     { id: 'fase4', nombre: 'Fase 4: Resultados' },
     { id: 'fase5', nombre: 'Fase 5: Bitácora' }
   ];
+
+  isEnabled(phaseId: string): boolean {
+    return this.enabledPhases.includes(phaseId);
+  }
 
   selectPhase(phaseId: string) {
     this.activePhase = phaseId;
