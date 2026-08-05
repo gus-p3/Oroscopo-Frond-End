@@ -79,8 +79,10 @@ export class DashboardComponent implements OnInit {
   isImporting: boolean = false;
   importSuccessMessage: string = '';
   importSummary: any = null;
-  isUsingImportedData: boolean = false;
+  isUsingImportedData: boolean = true;
   importedPersonas: any[] = [];
+  csvHeaders: string[] = [];
+  camposSeleccionados: string[] = [];
 
   ngOnInit() {
     this.cargarHistorialBitacora();
@@ -91,15 +93,15 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    // No cargamos personas desde DB para mostrar, solo del CSV.
     this.cargarPersonas();
 
-    // Cargar las preguntas del cuestionario
+    // Cargar las preguntas del cuestionario como fallback si no hay CSV
     this.apiService.getCuestionario().subscribe({
       next: (res) => {
         this.preguntas = res || [];
-        // Seleccionar todas por defecto
-        this.preguntaIdsSeleccionadas = this.preguntas.map(q => q._id);
+        if (this.camposSeleccionados.length === 0) {
+          this.preguntaIdsSeleccionadas = this.preguntas.map(q => q._id);
+        }
       },
       error: (err) => {
         console.error('Error al cargar preguntas:', err);
@@ -134,6 +136,14 @@ export class DashboardComponent implements OnInit {
             id: p.tempId
           }));
           this.isUsingImportedData = true;
+
+          if (this.importedPersonas.length > 0 && this.importedPersonas[0].rawRow) {
+            this.csvHeaders = Object.keys(this.importedPersonas[0].rawRow);
+            this.seleccionarSoloNumericos();
+          } else {
+            this.csvHeaders = [];
+            this.camposSeleccionados = [];
+          }
 
           const validos = this.importedPersonas.filter(p => p.valido);
           const invalidos = this.importedPersonas.filter(p => !p.valido);
@@ -175,56 +185,95 @@ export class DashboardComponent implements OnInit {
   restaurarBaseDatos() {
     this.isUsingImportedData = false;
     this.importedPersonas = [];
+    this.csvHeaders = [];
+    this.camposSeleccionados = [];
     this.personasFiltradas = [];
     this.personaIdsSeleccionadas = [];
     this.importSuccessMessage = '';
     this.importSummary = null;
   }
 
-  getCustomDatasetPayload() {
-    if (!this.isUsingImportedData) return null;
+  // ─── SELECCIÓN DE CAMPOS DEL CSV ───────────────────────────────────────────
+  isFieldSelected(field: string): boolean {
+    return this.camposSeleccionados.includes(field);
+  }
 
+  toggleFieldSelection(field: string) {
+    const idx = this.camposSeleccionados.indexOf(field);
+    if (idx > -1) {
+      this.camposSeleccionados.splice(idx, 1);
+    } else {
+      this.camposSeleccionados.push(field);
+    }
+  }
+
+  toggleAllFields() {
+    if (this.camposSeleccionados.length === this.csvHeaders.length) {
+      this.camposSeleccionados = [];
+    } else {
+      this.camposSeleccionados = [...this.csvHeaders];
+    }
+  }
+
+  seleccionarSoloNumericos() {
+    if (!this.csvHeaders || this.csvHeaders.length === 0) return;
+    this.camposSeleccionados = this.csvHeaders.filter(h => {
+      if (['personaId', 'id', '_id', 'nombre', 'genero'].includes(h)) return false;
+      if (!this.importedPersonas.length) return true;
+      const firstRow = this.importedPersonas[0];
+      const val = firstRow.rawRow ? firstRow.rawRow[h] : firstRow[h];
+      return val !== undefined && val !== null && val !== '' && !isNaN(Number(val));
+    });
+    if (this.camposSeleccionados.length === 0) {
+      this.camposSeleccionados = [...this.csvHeaders];
+    }
+  }
+
+  getCustomDatasetPayload() {
     const selectedPersonas = this.importedPersonas.filter(p => this.personaIdsSeleccionadas.includes(p.tempId));
-    
-    const dataset = selectedPersonas.map(p => {
-      const row: any = {};
-      this.preguntaIdsSeleccionadas.forEach(qId => {
-        if (p.respuestas[qId] !== undefined) {
-          row[qId] = p.respuestas[qId];
+    const listToUse = selectedPersonas.length > 0 ? selectedPersonas : this.importedPersonas;
+    const fieldsToUse = this.camposSeleccionados.length > 0 ? this.camposSeleccionados : this.csvHeaders;
+
+    const dataset = listToUse.map(p => {
+      const row: Record<string, number> = {};
+      fieldsToUse.forEach(field => {
+        let val: any = undefined;
+        if (p.rawRow && p.rawRow[field] !== undefined) {
+          val = p.rawRow[field];
+        } else if (p[field] !== undefined) {
+          val = p[field];
+        } else if (p.puntajes && p.puntajes[field] !== undefined) {
+          val = p.puntajes[field];
+        } else if (p.respuestas && p.respuestas[field] !== undefined) {
+          val = p.respuestas[field];
         }
+
+        const num = Number(val);
+        row[field] = isNaN(num) ? 0 : num;
       });
       return row;
     });
 
-    const ids = selectedPersonas.map(p => p.tempId);
+    const ids = listToUse.map(p => p.tempId);
     
-    const personasMapped = selectedPersonas.map(p => {
-      // Map respuestas to aspects using Cached questions
-      const aspectosMap = new Map<string, number>();
-      this.preguntas.forEach(q => {
-        const val = p.respuestas[q._id];
-        if (val !== undefined && (q as any).aspectoNombre) {
-          aspectosMap.set((q as any).aspectoNombre, val);
-        }
-      });
-
-      // Map puntajes to array entries format
-      const puntajesElementos = Object.entries(p.puntajes || {});
-
+    const personasMapped = listToUse.map(p => {
       return {
         _id: p.tempId,
         id: p.tempId,
-        nombre: p.nombre,
-        genero: p.genero,
-        signoZodiacal: p.signoZodiacal,
-        elementoSigno: p.elementoSigno,
-        elementoPredominante: p.elementoPredominante,
-        elementoEncuesta: p.elementoPredominante,
-        elementoPredominanteId: p.elementoPredominante,
-        elementoNombre: p.elementoPredominante,
+        nombre: p.nombre || p.rawRow?.nombre || 'Persona',
+        genero: p.genero || p.rawRow?.genero || 'N/A',
+        signoZodiacal: p.signoZodiacal || p.rawRow?.signoZodiacal || p.rawRow?.signo || 'N/A',
+        elementoSigno: p.elementoSigno || p.rawRow?.elementoSigno || 'N/A',
+        elementoPredominante: p.elementoPredominante || p.rawRow?.elementoPredominante || 'N/A',
+        elementoEncuesta: p.elementoPredominante || 'N/A',
+        elementoPredominanteId: p.elementoPredominante || 'N/A',
+        elementoNombre: p.elementoPredominante || 'N/A',
         puntajes: p.puntajes || {},
-        puntajesElementos,
-        aspectos: Array.from(aspectosMap.entries())
+        puntajesElementos: Object.entries(p.puntajes || {}),
+        aspectos: fieldsToUse.map(f => {
+          const val = p.rawRow ? p.rawRow[f] : p[f];
+          return [f, Number(val) || 0];
+        })
       };
     });
 
@@ -359,9 +408,10 @@ export class DashboardComponent implements OnInit {
     this.isCalculatingElbow = true;
     this.errorMessage = '';
     
-    const customDataset = this.isUsingImportedData ? this.getCustomDatasetPayload() : null;
+    const customDataset = this.getCustomDatasetPayload();
+    const fieldsUsed = this.camposSeleccionados.length > 0 ? this.camposSeleccionados : this.csvHeaders;
 
-    this.algorithmService.executeElbow(10, this.personaIdsSeleccionadas, this.preguntaIdsSeleccionadas, customDataset).subscribe({
+    this.algorithmService.executeElbow(10, this.personaIdsSeleccionadas, fieldsUsed, customDataset).subscribe({
       next: (res) => {
         this.elbowData = res;
         this.isCalculatingElbow = false;
@@ -416,17 +466,18 @@ export class DashboardComponent implements OnInit {
     this.errorMessage = '';
     const inicioMs = Date.now();
 
+    const fieldsUsed = this.camposSeleccionados.length > 0 ? this.camposSeleccionados : this.csvHeaders;
+    const customDataset = this.getCustomDatasetPayload();
+    const camposDetalle = fieldsUsed.join(', ');
+
     if (this.selectedAlgorithmId === 'kmeans') {
       const payload: KMeansParams = {
         k: Number(this.kValue),
         incluirPCA: this.incluirPCA,
         ids: this.personaIdsSeleccionadas,
-        questions: this.preguntaIdsSeleccionadas
+        questions: fieldsUsed,
+        customDataset
       };
-
-      if (this.isUsingImportedData) {
-        payload.customDataset = this.getCustomDatasetPayload();
-      }
 
       this.algorithmService.executeKMeans(payload).subscribe({
         next: (res) => {
@@ -439,14 +490,11 @@ export class DashboardComponent implements OnInit {
               clusterSizes[label] = (clusterSizes[label] || 0) + 1;
             }
           }
-          
-          const preguntasUsadas = this.preguntas.filter(q => payload.questions!.includes(q._id));
-          const preguntasDetalle = preguntasUsadas.map(q => `P${q.numero}`).join(', ');
 
           this.currentBitacoraPayload = {
             algoritmo: 'kmeans',
             parametrosUsados: { k: payload.k, incluirPCA: payload.incluirPCA },
-            filtrosDataset: { totalRegistros: payload.ids!.length, totalPreguntas: payload.questions!.length, preguntasDetalle },
+            filtrosDataset: { totalRegistros: (customDataset?.ids || []).length, totalPreguntas: fieldsUsed.length, preguntasDetalle: camposDetalle },
             resumenResultados: {
                 numClusters: payload.k,
                 inercia: res.result.inercia,
@@ -458,9 +506,9 @@ export class DashboardComponent implements OnInit {
           this.currentBitacoraDisplay = {
             fecha: new Date(),
             algoritmo: 'K-Means',
-            totalPersonas: payload.ids!.length || this.personas.length || 'Todas',
-            totalPreguntas: payload.questions!.length || this.preguntas.length || 'Todas',
-            preguntasDetalle,
+            totalPersonas: (customDataset?.ids || []).length || 'Todas',
+            totalPreguntas: fieldsUsed.length || 'Todas',
+            preguntasDetalle: camposDetalle,
             parametros: { k: payload.k, pca: payload.incluirPCA },
             tiempoRespuestaMs: Date.now() - inicioMs,
             resultadoCompleto: res
@@ -477,12 +525,9 @@ export class DashboardComponent implements OnInit {
         metodoEnlace: this.metodoEnlace,
         incluirPCA: this.incluirPCA,
         ids: this.personaIdsSeleccionadas,
-        questions: this.preguntaIdsSeleccionadas
+        questions: fieldsUsed,
+        customDataset
       };
-
-      if (this.isUsingImportedData) {
-        payload.customDataset = this.getCustomDatasetPayload();
-      }
 
       this.algorithmService.executeHierarchical(payload).subscribe({
         next: (res) => {
@@ -495,16 +540,13 @@ export class DashboardComponent implements OnInit {
             clusterSizes[label] = (clusterSizes[label] || 0) + 1;
           }
 
-          const preguntasUsadas = this.preguntas.filter(q => payload.questions!.includes(q._id));
-          const preguntasDetalle = preguntasUsadas.map(q => `P${q.numero}`).join(', ');
-
           this.currentBitacoraPayload = {
             algoritmo: 'jerarquico',
             parametrosUsados: { 
                 metodoEnlace: payload.metodoEnlace,
                 incluirPCA: payload.incluirPCA
             },
-            filtrosDataset: { totalRegistros: payload.ids!.length, totalPreguntas: payload.questions!.length, preguntasDetalle },
+            filtrosDataset: { totalRegistros: (customDataset?.ids || []).length, totalPreguntas: fieldsUsed.length, preguntasDetalle: camposDetalle },
             resumenResultados: {
                 linkageMatrixLength: res.result.linkageMatrix?.length || res.result.linkage_matrix?.length || 0,
                 metodoEnlace: payload.metodoEnlace,
@@ -516,9 +558,9 @@ export class DashboardComponent implements OnInit {
           this.currentBitacoraDisplay = {
             fecha: new Date(),
             algoritmo: 'Clusterización Jerárquica',
-            totalPersonas: payload.ids!.length || this.personas.length || 'Todas',
-            totalPreguntas: payload.questions!.length || this.preguntas.length || 'Todas',
-            preguntasDetalle,
+            totalPersonas: (customDataset?.ids || []).length || 'Todas',
+            totalPreguntas: fieldsUsed.length || 'Todas',
+            preguntasDetalle: camposDetalle,
             parametros: { metodoEnlace: payload.metodoEnlace },
             tiempoRespuestaMs: Date.now() - inicioMs,
             resultadoCompleto: res
@@ -576,41 +618,34 @@ export class DashboardComponent implements OnInit {
   }
 
   exportDatasetCSV() {
-    const payload = {
-      ids: this.personaIdsSeleccionadas,
-      questions: this.preguntaIdsSeleccionadas,
-      format: 'csv'
-    };
+    const selectedPersonas = this.importedPersonas.filter(p => this.personaIdsSeleccionadas.includes(p.tempId));
+    const listToExport = selectedPersonas.length > 0 ? selectedPersonas : this.importedPersonas;
+    if (listToExport.length === 0) return;
 
-    this.apiService.exportDataset(payload).subscribe({
-      next: (blob: Blob) => {
-        const dateStr = new Date().toISOString().split('T')[0];
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `dataset_personas_puntajes_preguntas_${dateStr}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      },
-      error: (err) => console.error('Error al exportar CSV:', err)
+    const fieldsToExport = this.camposSeleccionados.length > 0 ? this.camposSeleccionados : this.csvHeaders;
+    const headers = Array.from(new Set(['nombre', 'genero', 'signoZodiacal', ...fieldsToExport]));
+
+    const rows = listToExport.map(p => {
+      return headers.map(h => {
+        let val = '';
+        if (p.rawRow && p.rawRow[h] !== undefined) val = p.rawRow[h];
+        else if (p[h] !== undefined) val = p[h];
+        else if (p.puntajes && p.puntajes[h] !== undefined) val = p.puntajes[h];
+        else if (p.respuestas && p.respuestas[h] !== undefined) val = p.respuestas[h];
+        return `"${String(val).replace(/"/g, '""')}"`;
+      }).join(',');
     });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.downloadFile(csvContent, `dataset_campos_exportado_${dateStr}.csv`, 'text/csv;charset=utf-8;');
   }
 
   exportDatasetJSON() {
-    const payload = {
-      ids: this.personaIdsSeleccionadas,
-      questions: this.preguntaIdsSeleccionadas,
-      format: 'json'
-    };
-
-    this.apiService.exportDataset(payload).subscribe({
-      next: (data: any) => {
-        const jsonContent = JSON.stringify(data, null, 2);
-        const dateStr = new Date().toISOString().split('T')[0];
-        this.downloadFile(jsonContent, `dataset_personas_puntajes_preguntas_${dateStr}.json`, 'application/json');
-      },
-      error: (err) => console.error('Error al exportar JSON:', err)
-    });
+    const payload = this.getCustomDatasetPayload();
+    if (!payload) return;
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.downloadFile(JSON.stringify(payload, null, 2), `dataset_campos_exportado_${dateStr}.json`, 'application/json');
   }
 
   // ─── MÉTODOS DE IMPORTACIÓN Y EXPORTACIÓN DE LA BITÁCORA ──────────────────

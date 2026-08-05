@@ -138,11 +138,17 @@
                       (change)="toggleAllVisiblePersonas()" 
                     />
                   </th>
-                  <th>Nombre</th>
-                  <th>Género</th>
-                  <th>Signo Zodiacal</th>
-                  <th>Elemento Signo</th>
-                  <th>Elemento Predominante</th>
+                  @if (isUsingImportedData && csvHeaders.length > 0) {
+                    @for (header of csvHeaders; track header) {
+                      <th>{{ header }}</th>
+                    }
+                  } @else {
+                    <th>Nombre</th>
+                    <th>Género</th>
+                    <th>Signo Zodiacal</th>
+                    <th>Elemento Signo</th>
+                    <th>Elemento Predominante</th>
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -160,20 +166,31 @@
                         (change)="togglePersonaSelection(p._id)"
                       />
                     </td>
-                    <td class="td-name">
-                      {{ p.nombre }}
-                      @if (isUsingImportedData && !p.valido) {
-                        <span class="text-danger-warn" [title]="p.errores.join('\n')" style="cursor: help; margin-left: 6px;">⚠️</span>
+                    @if (isUsingImportedData && csvHeaders.length > 0) {
+                      @for (header of csvHeaders; track header) {
+                        <td>
+                          {{ p.rawRow ? (p.rawRow[header] !== undefined ? p.rawRow[header] : 'N/A') : p[header] }}
+                          @if ((header === 'nombre' || header === 'Nombre') && !p.valido) {
+                            <span class="text-danger-warn" [title]="p.errores.join('\n')" style="cursor: help; margin-left: 6px;">⚠️</span>
+                          }
+                        </td>
                       }
-                    </td>
-                    <td>{{ p.genero }}</td>
-                    <td>{{ p.signoZodiacal }}</td>
-                    <td><span class="badge-elemento badge-{{ p.elementoSigno | lowercase }}">{{ p.elementoSigno }}</span></td>
-                    <td><span class="badge-elemento badge-{{ p.elementoPredominante | lowercase }}">{{ p.elementoPredominante }}</span></td>
+                    } @else {
+                      <td class="td-name">
+                        {{ p.nombre }}
+                        @if (isUsingImportedData && !p.valido) {
+                          <span class="text-danger-warn" [title]="p.errores.join('\n')" style="cursor: help; margin-left: 6px;">⚠️</span>
+                        }
+                      </td>
+                      <td>{{ p.genero }}</td>
+                      <td>{{ p.signoZodiacal }}</td>
+                      <td><span class="badge-elemento badge-{{ p.elementoSigno | lowercase }}">{{ p.elementoSigno }}</span></td>
+                      <td><span class="badge-elemento badge-{{ p.elementoPredominante | lowercase }}">{{ p.elementoPredominante }}</span></td>
+                    }
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="6" class="td-empty" style="padding: 40px !important;">
+                    <td [attr.colspan]="isUsingImportedData && csvHeaders.length > 0 ? (csvHeaders.length + 1) : 6" class="td-empty" style="padding: 40px !important;">
                       <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
                         <span style="font-size: 24px;">📥</span>
                         <span style="font-weight: 600; color: #475569;">No hay datos cargados</span>
@@ -201,17 +218,17 @@
       </div>
     }
 
-    <!-- FASE 2: SELECCIÓN DE PREGUNTAS -->
+    <!-- FASE 2: SELECCIÓN DE CAMPOS DEL CSV -->
     @if (currentPhase === 'fase2') {
       <div class="phase-card">
         <div class="phase-header flex-header">
           <div>
-            <h2>❓ Fase 2: Selección de Preguntas</h2>
-            <p>Selecciona cuáles preguntas o aspectos del cuestionario zodiacal formarán las dimensiones del dataset.</p>
+            <h2>📋 Fase 2: Selección de Campos / Columnas para el Algoritmo</h2>
+            <p>Selecciona cuáles columnas/campos del CSV subido formarán las dimensiones o características numéricas para el análisis de clusterización.</p>
           </div>
           <div class="header-actions-wrapper">
             <div class="selection-status-badge">
-              Seleccionadas: <strong>{{ preguntaIdsSeleccionadas.length }}</strong> / {{ preguntas.length }}
+              Seleccionados: <strong>{{ camposSeleccionados.length }}</strong> / {{ (csvHeaders.length > 0 ? csvHeaders.length : preguntas.length) }}
             </div>
             <div class="export-btn-group">
               <button type="button" class="btn-export btn-export-csv" (click)="exportDatasetCSV()" title="Exportar dataset completo a CSV">
@@ -227,34 +244,62 @@
         <div class="phase-body">
           <div class="info-pill-row">
             <div class="info-pill">
-              <span>ℹ️ Por defecto se utilizan todas las preguntas activas del cuestionario.</span>
+              <span>ℹ️ Selecciona las columnas numéricas o de respuestas del CSV que se enviarán a los algoritmos ML (K-Means / Jerárquico).</span>
             </div>
-            <button class="btn-toggle-all-questions" (click)="toggleAllQuestions()">
-              {{ preguntaIdsSeleccionadas.length === preguntas.length ? 'Deseleccionar Todas' : 'Seleccionar Todas' }}
-            </button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-toggle-all-questions" (click)="seleccionarSoloNumericos()">
+                ⚡ Solo Campos Numéricos
+              </button>
+              <button class="btn-toggle-all-questions" (click)="toggleAllFields()">
+                {{ (csvHeaders.length > 0 ? camposSeleccionados.length === csvHeaders.length : camposSeleccionados.length === preguntas.length) ? 'Deseleccionar Todos' : 'Seleccionar Todos' }}
+              </button>
+            </div>
           </div>
 
-          <!-- Grid de Preguntas -->
+          <!-- Grid de Campos de Columnas -->
           <div class="questions-selection-grid">
-            @for (q of preguntas; track q._id) {
-              <div 
-                class="question-selection-card" 
-                [class.card-selected]="isQuestionSelected(q._id)"
-                (click)="toggleQuestionSelection(q._id)"
-              >
-                <div class="question-card-header">
-                  <span class="question-number">Pregunta {{ q.numero }}</span>
-                  <input 
-                    type="checkbox" 
-                    class="selection-checkbox" 
-                    [checked]="isQuestionSelected(q._id)"
-                    (click)="$event.stopPropagation()"
-                    (change)="toggleQuestionSelection(q._id)"
-                  />
+            @if (csvHeaders.length > 0) {
+              @for (header of csvHeaders; track header) {
+                <div 
+                  class="question-selection-card" 
+                  [class.card-selected]="isFieldSelected(header)"
+                  (click)="toggleFieldSelection(header)"
+                >
+                  <div class="question-card-header">
+                    <span class="question-number">Columna CSV</span>
+                    <input 
+                      type="checkbox" 
+                      class="selection-checkbox" 
+                      [checked]="isFieldSelected(header)"
+                      (click)="$event.stopPropagation()"
+                      (change)="toggleFieldSelection(header)"
+                    />
+                  </div>
+                  <p class="question-text" style="font-weight: 700; font-size: 15px; margin-top: 6px;">{{ header }}</p>
+                  <span class="aspect-label">Dimensión / Característica</span>
                 </div>
-                <p class="question-text">{{ q.texto }}</p>
-                <span class="aspect-label">Dimensión: {{ q.aspectoId }}</span>
-              </div>
+              }
+            } @else {
+              @for (q of preguntas; track q._id) {
+                <div 
+                  class="question-selection-card" 
+                  [class.card-selected]="isQuestionSelected(q._id)"
+                  (click)="toggleQuestionSelection(q._id)"
+                >
+                  <div class="question-card-header">
+                    <span class="question-number">Pregunta {{ q.numero }}</span>
+                    <input 
+                      type="checkbox" 
+                      class="selection-checkbox" 
+                      [checked]="isQuestionSelected(q._id)"
+                      (click)="$event.stopPropagation()"
+                      (change)="toggleQuestionSelection(q._id)"
+                    />
+                  </div>
+                  <p class="question-text">{{ q.texto }}</p>
+                  <span class="aspect-label">Dimensión: {{ q.aspectoId }}</span>
+                </div>
+              }
             }
           </div>
 

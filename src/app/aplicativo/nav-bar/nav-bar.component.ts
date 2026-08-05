@@ -19,7 +19,7 @@ export class NavBarComponent {
 
   navItems: NavItem[] = [
     { id: 'fase1', nombre: 'Fase 1: Selección de Personas' },
-    { id: 'fase2', nombre: 'Fase 2: Selección de Preguntas' },
+    { id: 'fase2', nombre: 'Fase 2: Selección de Campos' },
     { id: 'fase3', nombre: 'Fase 3: Selección de Algoritmo' },
     { id: 'fase4', nombre: 'Fase 4: Resultados' },
     { id: 'fase5', nombre: 'Fase 5: Bitácora' }
