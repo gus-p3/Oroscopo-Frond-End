@@ -17,12 +17,45 @@
       <div class="topbar-actions">
         <button class="btn-clustering" routerLink="/clustering" style="margin-right: 8px;">
           <mat-icon>analytics</mat-icon>
-          Minería & Clustering
+          Minería &amp; Clustering
         </button>
         <button class="btn-export" (click)="exportarCsv()" style="margin-right: 8px;">
           <mat-icon>download</mat-icon>
           Exportar CSV
         </button>
+
+        <!-- Exportar Dataset para Algoritmos -->
+        <div class="export-dataset-wrapper" style="position:relative; display:inline-block; margin-right: 8px;">
+          <button class="btn-export btn-dataset-export" (click)="toggleOpcionesExport()">
+            <mat-icon>table_chart</mat-icon>
+            Exportar Dataset
+            <mat-icon style="font-size:16px; margin-left:4px;">expand_more</mat-icon>
+          </button>
+          @if (mostrarOpcionesExport) {
+            <div class="export-dropdown">
+              <p class="export-dropdown-title">Formato de encabezado</p>
+              <label class="export-dropdown-option">
+                <input type="radio" name="headerMode" value="short" [(ngModel)]="headerMode" />
+                <span>
+                  <strong>Diminutivo</strong>
+                  <small>P1_Puntaje, P2_Puntaje...</small>
+                </span>
+              </label>
+              <label class="export-dropdown-option">
+                <input type="radio" name="headerMode" value="full" [(ngModel)]="headerMode" />
+                <span>
+                  <strong>Nombre completo</strong>
+                  <small>Texto completo de la pregunta</small>
+                </span>
+              </label>
+              <button class="btn-export-confirm" (click)="exportarDataset()">
+                <mat-icon>file_download</mat-icon>
+                Descargar CSV
+              </button>
+            </div>
+          }
+        </div>
+
         <button class="btn-logout" (click)="logout()">
           <mat-icon>logout</mat-icon>
           Cerrar sesión

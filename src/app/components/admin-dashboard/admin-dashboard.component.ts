@@ -40,6 +40,10 @@ export class AdminDashboardComponent implements OnInit {
 
   filtros = { genero: '', signoZodiacalId: '' };
 
+  // Exportar Dataset para Algoritmos
+  headerMode: 'short' | 'full' = 'short';
+  mostrarOpcionesExport: boolean = false;
+
   getEmoji(nombre: string): string {
     return ELEMENTO_EMOJI[nombre] ?? '✦';
   }
@@ -96,6 +100,31 @@ export class AdminDashboardComponent implements OnInit {
     if (this.filtros.genero) url += `&genero=${this.filtros.genero}`;
     if (this.filtros.signoZodiacalId) url += `&signoZodiacalId=${this.filtros.signoZodiacalId}`;
     window.open(url, '_blank');
+  }
+
+  toggleOpcionesExport() {
+    this.mostrarOpcionesExport = !this.mostrarOpcionesExport;
+  }
+
+  exportarDataset() {
+    const url = `${environment.apiUrl}/personas/export-dataset?format=csv&headerMode=${this.headerMode}`;
+    // Usar fetch para POST (body vacío = todas las personas, todas las preguntas)
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then(resp => {
+        if (!resp.ok) throw new Error('Error al exportar');
+        return resp.blob();
+      })
+      .then(blob => {
+        const mode = this.headerMode === 'full' ? 'nombre_completo' : 'diminutivo';
+        const fileName = `dataset_algoritmos_${mode}_${new Date().toISOString().split('T')[0]}.csv`;
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(link.href);
+        this.mostrarOpcionesExport = false;
+      })
+      .catch(err => console.error(err));
   }
 
   getSignoNombre(persona: any): string {
