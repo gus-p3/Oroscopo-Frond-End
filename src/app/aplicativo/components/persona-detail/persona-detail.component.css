@@ -8,13 +8,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 24px 24px 18px 24px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
+  background: #ffffff;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
 }
 
 .drawer-title-group {

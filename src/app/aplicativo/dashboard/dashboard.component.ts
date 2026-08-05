@@ -396,6 +396,7 @@ export class DashboardComponent implements OnInit {
 
   onPhaseChange(phaseId: string) {
     this.currentPhase = phaseId;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   onAlgorithmSelected(algorithm: AlgoritmItem) {
