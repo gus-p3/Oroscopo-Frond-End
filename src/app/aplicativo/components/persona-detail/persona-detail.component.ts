@@ -86,6 +86,10 @@ export class PersonaDetailComponent implements OnInit, OnChanges {
     });
 
     this.loading = false;
+    setTimeout(() => {
+      const scrollEl = document.querySelector('.drawer-scroll-content');
+      if (scrollEl) scrollEl.scrollTop = 0;
+    }, 0);
   }
 
   cargarDetalles(id: string) {
