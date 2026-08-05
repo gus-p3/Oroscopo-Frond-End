@@ -338,6 +338,27 @@
               </div>
             </div>
 
+            <!-- Modelo Guardado -->
+            @if (savedModels.length > 0) {
+              <div class="saved-models-section" style="padding: 16px; background-color: #F8FAFC; border-radius: 8px; margin-bottom: 24px; border: 1px solid #E2E8F0;">
+                <label for="savedModelSelect" style="display: block; font-weight: 600; color: #1E293B; margin-bottom: 8px;">🔄 Usar un Modelo Previamente Entrenado (Reentrenamiento)</label>
+                <select id="savedModelSelect" class="form-control" [(ngModel)]="selectedSavedModelId" (change)="onSavedModelChange()">
+                  <option value="">-- No usar (Entrenar Nuevo Modelo) --</option>
+                  @for (model of savedModels; track model._id) {
+                    @if (model.algoritmo === selectedAlgorithmName || (model.algoritmo === 'K-Means' && selectedAlgorithmId === 'kmeans') || (model.algoritmo === 'Clusterización Jerárquica' && selectedAlgorithmId === 'jerarquico')) {
+                      <option [value]="model._id">{{ model.fecha | date:'short' }} - Registros: {{ model.totalPersonas }} - Columnas: {{ model.totalPreguntas }}</option>
+                    }
+                  }
+                </select>
+                @if (savedModelError) {
+                  <div class="error-alert" style="margin-top: 12px; padding: 12px; background-color: #FEF2F2; color: #DC2626; border-radius: 6px; font-size: 14px; display: flex; gap: 8px;">
+                    <span>⚠️</span>
+                    <span>{{ savedModelError }}</span>
+                  </div>
+                }
+              </div>
+            }
+
             <!-- Formulario K-Means con Método del Codo -->
             @if (selectedAlgorithmId === 'kmeans') {
               <div class="form-grid">
@@ -461,7 +482,7 @@
             <div class="form-actions">
               <button 
                 class="btn-submit" 
-                [disabled]="isLoading" 
+                [disabled]="isLoading || isCalculatingElbow || !!savedModelError" 
                 (click)="executeAlgorithm()"
               >
                 @if (isLoading) {
@@ -482,9 +503,25 @@
             </div>
           }
         </section>
+      </div>
+    }
 
-        <!-- SECCIÓN DE BITÁCORA MOVIDA A FASE 5 -->
-        <!-- ABAJO DEL TODO: SELECCIÓN DE RESULTADOS Y GRÁFICAS (FULL WIDTH) -->
+    <!-- FASE 4: RESULTADOS -->
+    @if (currentPhase === 'fase4') {
+      <div class="phase-card" style="margin-bottom: 1.5rem;">
+        <div class="phase-header">
+          <h2>📊 Fase 4: Resultados de Minería de Datos</h2>
+          <p>Métricas y agrupación generadas por el algoritmo ejecutado.</p>
+        </div>
+      </div>
+
+      @if (isLoading) {
+        <div class="phase-card" style="text-align: center; padding: 4rem 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <div class="btn-spinner" style="width: 48px; height: 48px; border-width: 4px; border-color: rgba(124,58,237,0.2); border-top-color: #7c3aed; margin-bottom: 1.5rem;"></div>
+          <h3 style="color: #1E1B4B; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem 0;">Procesando algoritmo en el servidor ML...</h3>
+          <p style="color: #64748B; font-size: 0.9rem; margin: 0;">Calculando matrices de distancia, proyecciones PCA y clusterización. Por favor espera un momento.</p>
+        </div>
+      } @else {
         <div class="full-results-wrapper">
           @if (selectedAlgorithmId === 'kmeans') {
             <app-k-means 
@@ -504,35 +541,7 @@
             </app-hierarchical>
           }
         </div>
-      </div>
-    }
-
-    <!-- FASE 4: RESULTADOS -->
-    @if (currentPhase === 'fase4') {
-      <div class="phase-card">
-        <div class="phase-header">
-          <h2>📊 Fase 4: Resultados de Minería de Datos</h2>
-          <p>Métricas y agrupación generadas por el algoritmo ejecutado.</p>
-        </div>
-
-        @if (selectedAlgorithmId === 'kmeans') {
-          <app-k-means 
-            [selectedPersonaIds]="personaIdsSeleccionadas"
-            [selectedQuestionIds]="preguntaIdsSeleccionadas"
-            [data]="kmeansData" 
-            [loading]="isLoading">
-          </app-k-means>
-        }
-
-        @if (selectedAlgorithmId === 'jerarquico') {
-          <app-hierarchical 
-            [selectedPersonaIds]="personaIdsSeleccionadas"
-            [selectedQuestionIds]="preguntaIdsSeleccionadas"
-            [data]="hierarchicalData" 
-            [loading]="isLoading">
-          </app-hierarchical>
-        }
-      </div>
+      }
     }
 
     <!-- FASE 5: BITÁCORA -->
@@ -554,6 +563,17 @@
                   <br><small style="color: #64748B;">{{ currentBitacoraDisplay.preguntasDetalle }}</small>
                 }
               </p>
+              
+              <div style="background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; margin-top: 1rem;">
+                <p style="margin: 0 0 5px 0; font-weight: 600;">Configuración del Algoritmo:</p>
+                @if (currentBitacoraDisplay.algoritmo === 'K-Means') {
+                  <p style="margin: 0; font-size: 0.9rem;">🎯 <strong>Número de Clusters (K):</strong> {{ currentBitacoraDisplay.parametros.k }}</p>
+                  <p style="margin: 0; font-size: 0.9rem;">📈 <strong>Componentes PCA (2D):</strong> {{ currentBitacoraDisplay.parametros.pca ? 'Sí' : 'No' }}</p>
+                } @else {
+                  <p style="margin: 0; font-size: 0.9rem;">🔗 <strong>Método de Enlace:</strong> {{ currentBitacoraDisplay.parametros.metodoEnlace }}</p>
+                  <p style="margin: 0; font-size: 0.9rem;">🎯 <strong>Número de Clusters Cortados:</strong> 3</p>
+                }
+              </div>
               
               <div class="form-actions" style="margin-top: 1.5rem; display: flex; align-items: center; gap: 1rem;">
                 <button 
@@ -640,9 +660,9 @@
                           <td>
                             <span class="params-pill">
                               @if (log.algoritmo === 'K-Means') {
-                                k = {{ log.parametros.k }}, pca = {{ log.parametros.pca ? 'Sí' : 'No' }}
+                                Clusters (K) = {{ log.parametros.k }}, PCA = {{ log.parametros.pca ? 'Sí' : 'No' }}
                               } @else {
-                                linkage = {{ log.parametros.metodoEnlace }}
+                                Enlace = {{ log.parametros.metodoEnlace }}, Clusters = 3
                               }
                             </span>
                           </td>

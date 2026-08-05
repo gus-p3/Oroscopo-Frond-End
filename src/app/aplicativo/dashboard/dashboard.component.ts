@@ -39,6 +39,11 @@ export class DashboardComponent implements OnInit {
   // Parámetros para Clusterización Jerárquica
   metodoEnlace: 'ward' | 'average' | 'complete' = 'ward';
 
+  // Modelos Guardados
+  savedModels: any[] = [];
+  selectedSavedModelId: string = '';
+  savedModelError: string = '';
+
   // Estados de ejecución
   isLoading: boolean = false;
   errorMessage: string = '';
@@ -298,8 +303,11 @@ export class DashboardComponent implements OnInit {
             ? { k: b.parametrosUsados?.k, pca: b.parametrosUsados?.incluirPCA } 
             : { metodoEnlace: b.parametrosUsados?.metodoEnlace, nClusters: b.parametrosUsados?.nClusters },
           tiempoRespuestaMs: '-', // No está en DB, se muestra para nuevas
-          resultadoCompleto: b.resultadoCompleto
+          resultadoCompleto: b.resultadoCompleto,
+          rutaModelo: b.rutaModelo,
+          raw: b
         }));
+        this.savedModels = this.bitacoraLogs.filter(log => log.rutaModelo);
       },
       error: (err) => console.error('Error al cargar bitácora', err)
     });
@@ -435,6 +443,45 @@ export class DashboardComponent implements OnInit {
     this.selectedAlgorithmId = algorithm.id;
     this.selectedAlgorithmName = algorithm.nombre;
     this.errorMessage = '';
+    this.selectedSavedModelId = '';
+    this.savedModelError = '';
+  }
+
+  onSavedModelChange() {
+    this.savedModelError = '';
+    if (!this.selectedSavedModelId) {
+      return;
+    }
+    
+    const log = this.savedModels.find(m => m._id === this.selectedSavedModelId);
+    if (!log) return;
+
+    // Verificar dimensiones (campos)
+    const requiredFields = log.raw?.filtrosDataset?.preguntasDetalle?.split(', ') || [];
+    
+    const fieldsUsed = this.camposSeleccionados.length > 0 ? this.camposSeleccionados : this.csvHeaders;
+    
+    const missing = requiredFields.filter((f: string) => !fieldsUsed.includes(f));
+    
+    if (missing.length > 0) {
+      this.savedModelError = `El modelo guardado requiere dimensiones que no están seleccionadas en el dataset actual: ${missing.join(', ')}. Por favor, ve a la Fase 2 y selecciónalas.`;
+      // Set to force empty selection to prevent execution
+    } else {
+      // Force selected dimensions to match exactly what the model expects?
+      // User requested "solo le permita seleccionar las dimensiones que ya se usaron"
+      // We can just automatically select them.
+      this.camposSeleccionados = [...requiredFields];
+      this.savedModelError = '';
+      
+      // Update algorithm parameters
+      if (this.selectedAlgorithmId === 'kmeans' && log.parametros) {
+        this.kValue = log.parametros.k;
+        this.incluirPCA = log.parametros.pca;
+      } else if (this.selectedAlgorithmId === 'jerarquico' && log.parametros) {
+        this.metodoEnlace = log.parametros.metodoEnlace;
+        this.incluirPCA = log.parametros.pca !== undefined ? log.parametros.pca : true;
+      }
+    }
   }
 
   calculateElbow() {
@@ -495,6 +542,7 @@ export class DashboardComponent implements OnInit {
   }
 
   executeAlgorithm() {
+    this.currentPhase = 'fase4';
     this.isLoading = true;
     this.errorMessage = '';
     const inicioMs = Date.now();
@@ -511,6 +559,11 @@ export class DashboardComponent implements OnInit {
         questions: fieldsUsed,
         customDataset
       };
+      
+      if (this.selectedSavedModelId) {
+        const log = this.savedModels.find(m => m._id === this.selectedSavedModelId);
+        if (log) payload.rutaModelo = log.rutaModelo;
+      }
 
       this.algorithmService.executeKMeans(payload).subscribe({
         next: (res) => {
@@ -533,7 +586,8 @@ export class DashboardComponent implements OnInit {
                 inercia: res.result.inercia,
                 clusterSizes
             },
-            resultadoCompleto: res
+            resultadoCompleto: res,
+            rutaModelo: res.result?.rutaModelo
           };
 
           this.currentBitacoraDisplay = {
@@ -561,6 +615,11 @@ export class DashboardComponent implements OnInit {
         questions: fieldsUsed,
         customDataset
       };
+      
+      if (this.selectedSavedModelId) {
+        const log = this.savedModels.find(m => m._id === this.selectedSavedModelId);
+        if (log) payload.rutaModelo = log.rutaModelo;
+      }
 
       this.algorithmService.executeHierarchical(payload).subscribe({
         next: (res) => {
@@ -585,7 +644,8 @@ export class DashboardComponent implements OnInit {
                 metodoEnlace: payload.metodoEnlace,
                 clusterSizes
             },
-            resultadoCompleto: res
+            resultadoCompleto: res,
+            rutaModelo: res.result?.rutaModelo
           };
 
           this.currentBitacoraDisplay = {

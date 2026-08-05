@@ -455,8 +455,8 @@
       <!-- GRÁFICA ESTADÍSTICA 2: Elementos por Cluster -->
       <div class="chart-card">
         <div class="chart-header">
-          <h4 class="chart-title">🔥 Estadística 2: Elementos por Cluster</h4>
-          <span class="chart-subtitle">Composición de Fuego, Agua, Tierra y Aire en cada cluster</span>
+          <h4 class="chart-title">🔥 Estadística 2: Elementos por Cluster (Calculado vs Real)</h4>
+          <span class="chart-subtitle">Composición de Fuego, Agua, Tierra y Aire en cada cluster (Encuesta vs Signo)</span>
         </div>
 
         <div class="elements-breakdown-list">
@@ -465,11 +465,27 @@
               <div class="cluster-block-title" [style.color]="c.color">
                 Cluster {{ c.clusterId + 1 }} (Total: {{ c.total }})
               </div>
+
+              <!-- Elementos Calculados (Encuesta) -->
+              <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; margin-top: 6px; margin-bottom: 3px;">
+                📊 Calculados (Encuesta):
+              </div>
               <div class="element-chips-row">
-                <span class="el-chip chip-fire">🔥 Fuego: {{ c.fuego }}</span>
-                <span class="el-chip chip-water">🌊 Agua: {{ c.agua }}</span>
-                <span class="el-chip chip-earth">⛰️ Tierra: {{ c.tierra }}</span>
-                <span class="el-chip chip-air">🍃 Aire: {{ c.aire }}</span>
+                <span class="el-chip chip-fire">🔥 Fuego: {{ c.calculados.fuego }}</span>
+                <span class="el-chip chip-water">🌊 Agua: {{ c.calculados.agua }}</span>
+                <span class="el-chip chip-earth">⛰️ Tierra: {{ c.calculados.tierra }}</span>
+                <span class="el-chip chip-air">🍃 Aire: {{ c.calculados.aire }}</span>
+              </div>
+
+              <!-- Elementos Reales (Signo Zodiacal) -->
+              <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; margin-top: 10px; margin-bottom: 3px;">
+                ✨ Reales (Signo Zodiacal):
+              </div>
+              <div class="element-chips-row">
+                <span class="el-chip chip-fire">🔥 Fuego: {{ c.reales.fuego }}</span>
+                <span class="el-chip chip-water">🌊 Agua: {{ c.reales.agua }}</span>
+                <span class="el-chip chip-earth">⛰️ Tierra: {{ c.reales.tierra }}</span>
+                <span class="el-chip chip-air">🍃 Aire: {{ c.reales.aire }}</span>
               </div>
             </div>
           }
@@ -701,19 +717,15 @@
                       <span class="person-fullname">{{ person.nombre }}</span>
                     </td>
                     <td class="td-gender">{{ person.genero }}</td>
+                    <td>{{ person.signoZodiacal || 'Desconocido' }}</td>
                     <td>
-                      <span class="glass-badge badge-sign">
-                        ⭐ {{ person.signoZodiacal || 'Desconocido' }}
+                      <span class="el-chip-sm chip-real">
+                        {{ getEmoji(person.elementoSigno || 'N/A') }} {{ person.elementoSigno || 'N/A' }}
                       </span>
                     </td>
                     <td>
-                      <span class="glass-badge badge-sign-element">
-                        🔥 {{ person.elementoSigno || 'N/A' }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="glass-badge badge-survey-element">
-                        🎯 {{ person.elementoEncuesta || person.elementoPredominanteId || 'N/A' }}
+                      <span class="el-chip-sm chip-calc">
+                        {{ getEmoji(person.elementoEncuesta || person.elementoPredominanteId || 'N/A') }} {{ person.elementoEncuesta || person.elementoPredominanteId || 'N/A' }}
                       </span>
                     </td>
                     <td class="td-center">
@@ -796,23 +808,24 @@
             </div>
           </div>
         </div>
-
-        <!-- PANEL DE ASPECTOS AL LADO DE LA TABLA -->
-        @if (selectedPersonaId) {
-          <div class="table-detail-column">
-            <app-persona-detail 
-              [idPersona]="selectedPersonaId" 
-              [personaData]="selectedPersonaData"
-              (close)="closePersonaDetail()"
-            ></app-persona-detail>
-          </div>
-        }
       </div>
     </div>
   } @else {
     <div class="empty-results">
       <span class="empty-icon">🌳</span>
       <p>Configura los parámetros del formulario y presiona <strong>"Enviar y Ver Resultados"</strong> para visualizar el dendrograma, gráficos y métricas.</p>
+    </div>
+  }
+
+  <!-- PANEL DE ASPECTOS (MODAL) -->
+  @if (selectedPersonaId) {
+    <div class="modal-backdrop" (click)="closePersonaDetail()"></div>
+    <div class="table-detail-column">
+      <app-persona-detail 
+        [idPersona]="selectedPersonaId" 
+        [personaData]="selectedPersonaData"
+        (close)="closePersonaDetail()"
+      ></app-persona-detail>
     </div>
   }
 </div>

@@ -496,7 +496,16 @@ export class HierarchicalComponent implements OnChanges {
     });
   }
 
-  // ==================== GRÁFICAS DE PUNTOS (SCATTER PLOTS) ====================
+  getEmoji(nombre: string): string {
+    const n = (nombre || '').toLowerCase();
+    if (n.includes('fuego')) return '🔥';
+    if (n.includes('agua')) return '🌊';
+    if (n.includes('tierra')) return '⛰️';
+    if (n.includes('aire')) return '🍃';
+    return '✨';
+  }
+
+  // ==================== METODOS DE NAVEGACIÓN Y CARGA ====================
 
   // 📍 GRÁFICA DE PUNTOS 1: PCA 2D (Plano Principal PC1 vs PC2)
   get pcaPoints(): PcaPoint[] {
@@ -694,22 +703,48 @@ export class HierarchicalComponent implements OnChanges {
 
   // ==================== GRÁFICAS ESTADÍSTICAS Y DISTRIBUCIÓN ====================
 
-  // Gráfica Estadística A: Desglose por Elementos en cada Cluster
-  get elementDistributionByCluster(): { clusterId: number; color: string; fuego: number; agua: number; tierra: number; aire: number; total: number }[] {
+  // Gráfica Estadística A: Desglose por Elementos en cada Cluster (Calculado vs Real)
+  get elementDistributionByCluster(): {
+    clusterId: number;
+    color: string;
+    total: number;
+    calculados: { fuego: number; agua: number; tierra: number; aire: number };
+    reales: { fuego: number; agua: number; tierra: number; aire: number };
+  }[] {
     if (!this.data?.personas) return [];
 
-    const grouped: { [key: number]: { fuego: number; agua: number; tierra: number; aire: number; total: number } } = {};
+    const grouped: {
+      [key: number]: {
+        calculados: { fuego: number; agua: number; tierra: number; aire: number };
+        reales: { fuego: number; agua: number; tierra: number; aire: number };
+        total: number;
+      }
+    } = {};
 
     this.data.personas.forEach(p => {
       const c = p.cluster ?? 0;
-      if (!grouped[c]) grouped[c] = { fuego: 0, agua: 0, tierra: 0, aire: 0, total: 0 };
+      if (!grouped[c]) {
+        grouped[c] = {
+          calculados: { fuego: 0, agua: 0, tierra: 0, aire: 0 },
+          reales: { fuego: 0, agua: 0, tierra: 0, aire: 0 },
+          total: 0
+        };
+      }
 
-      const el = (p.elementoEncuesta || p.elementoPredominanteId || p.elementoSigno || '').toLowerCase();
-      if (el.includes('fuego')) grouped[c].fuego++;
-      else if (el.includes('agua')) grouped[c].agua++;
-      else if (el.includes('tierra')) grouped[c].tierra++;
-      else if (el.includes('aire')) grouped[c].aire++;
-      else grouped[c].fuego++;
+      // Elemento Calculado (Encuesta)
+      const elCalc = (p.elementoEncuesta || p.elementoPredominante || p.elementoPredominanteId || '').toLowerCase();
+      if (elCalc.includes('fuego')) grouped[c].calculados.fuego++;
+      else if (elCalc.includes('agua')) grouped[c].calculados.agua++;
+      else if (elCalc.includes('tierra')) grouped[c].calculados.tierra++;
+      else if (elCalc.includes('aire')) grouped[c].calculados.aire++;
+
+      // Elemento Real (Signo Zodiacal)
+      const elReal = (p.elementoSigno || (p as any).signoZodiacalId?.elementoId?.nombre || '').toLowerCase();
+      if (elReal.includes('fuego')) grouped[c].reales.fuego++;
+      else if (elReal.includes('agua')) grouped[c].reales.agua++;
+      else if (elReal.includes('tierra')) grouped[c].reales.tierra++;
+      else if (elReal.includes('aire')) grouped[c].reales.aire++;
+
       grouped[c].total++;
     });
 

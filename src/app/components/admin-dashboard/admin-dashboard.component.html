@@ -63,7 +63,10 @@
       </div>
     </header>
 
-    <!-- Stats Cards -->
+    <!-- Stats Cards Summary (Calculados) -->
+    <div style="margin-bottom: 0.5rem;" *ngIf="estadisticas">
+      <h3 style="font-size: 0.88rem; font-weight: 700; color: #64748b; margin: 0 0 6px 0; text-transform: uppercase;">📊 Elementos Calculados (Encuesta)</h3>
+    </div>
     <section class="stats-row" *ngIf="estadisticas">
       <div class="stat-card">
         <mat-icon class="stat-icon">assignment_turned_in</mat-icon>
@@ -82,8 +85,158 @@
       </div>
     </section>
 
-    <!-- Filtros -->
+    <!-- Stats Cards Summary (Reales del Signo) -->
+    <div style="margin-top: 1rem; margin-bottom: 0.5rem;" *ngIf="estadisticas?.distribucionElementosReales">
+      <h3 style="font-size: 0.88rem; font-weight: 700; color: #64748b; margin: 0 0 6px 0; text-transform: uppercase;">✨ Elementos Reales (del Signo Zodiacal)</h3>
+    </div>
+    <section class="stats-row" *ngIf="estadisticas?.distribucionElementosReales">
+      <div class="stat-card elemento-card" *ngFor="let el of estadisticas.distribucionElementosReales">
+        <span class="stat-emoji">{{ getEmoji(el.nombre) }}</span>
+        <div>
+          <p class="stat-label">Real {{ el.nombre }}</p>
+          <p class="stat-value">{{ el.count }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECCIÓN DE ANÁLISIS ESTADÍSTICO Y MATEMÁTICO ===== -->
+    <section class="stats-math-section" *ngIf="estadisticas?.metricasEstadisticas">
+      <div class="section-title-row">
+        <h2>📐 Análisis Estadístico &amp; Métricas Descriptivas</h2>
+        <span class="badge-tag">Valores sobre {{ estadisticas.metricasEstadisticas.totalEvaluaciones }} datos calculados</span>
+      </div>
+
+      <div class="math-grid">
+        <div class="math-card">
+          <div class="math-card-icon">📊</div>
+          <div class="math-card-info">
+            <span class="math-label">Media (Promedio)</span>
+            <span class="math-value">{{ estadisticas.metricasEstadisticas.media }} pts</span>
+            <span class="math-desc">Puntaje promedio global por elemento</span>
+          </div>
+        </div>
+
+        <div class="math-card">
+          <div class="math-card-icon">🎯</div>
+          <div class="math-card-info">
+            <span class="math-label">Mediana (Punto Medio)</span>
+            <span class="math-value">{{ estadisticas.metricasEstadisticas.mediana }} pts</span>
+            <span class="math-desc">50% de las muestras quedan abajo</span>
+          </div>
+        </div>
+
+        <div class="math-card">
+          <div class="math-card-icon">🔥</div>
+          <div class="math-card-info">
+            <span class="math-label">Moda (Frecuente)</span>
+            <span class="math-value">{{ estadisticas.metricasEstadisticas.moda }} pts</span>
+            <span class="math-desc">Valor con mayor frecuencia</span>
+          </div>
+        </div>
+
+        <div class="math-card">
+          <div class="math-card-icon">📈</div>
+          <div class="math-card-info">
+            <span class="math-label">Desviación Estándar (σ)</span>
+            <span class="math-value">{{ estadisticas.metricasEstadisticas.desviacionEstandar }}</span>
+            <span class="math-desc">Dispersión respecto a la media</span>
+          </div>
+        </div>
+
+        <div class="math-card">
+          <div class="math-card-icon">⚡</div>
+          <div class="math-card-info">
+            <span class="math-label">Varianza (σ²)</span>
+            <span class="math-value">{{ estadisticas.metricasEstadisticas.varianza }}</span>
+            <span class="math-desc">Variabilidad de la distribución</span>
+          </div>
+        </div>
+
+        <div class="math-card accent-card">
+          <div class="math-card-icon">✨</div>
+          <div class="math-card-info">
+            <span class="math-label">Coincidencia Zodiacal</span>
+            <span class="math-value">{{ porcentajeCoincidencia }}%</span>
+            <span class="math-desc">Encuesta vs Elemento del Signo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficos Visuales de Distribución -->
+      <div class="charts-row">
+        <!-- Gráfica de Barras Elementos -->
+        <div class="chart-box">
+          <h3>🔥 Composición de Elementos Predominantes</h3>
+          <div class="bars-list">
+            <div class="bar-item" *ngFor="let el of estadisticas.distribucionElementos">
+              <div class="bar-header">
+                <span>{{ getEmoji(el.nombre) }} <strong>{{ el.nombre }}</strong></span>
+                <span>{{ el.count }} muestra(s)</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="(el.count / getMaxElementCount()) * 100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Promedios Específicos por Elemento -->
+        <div class="chart-box">
+          <h3>📌 Métricas Detalladas por Elemento</h3>
+          <div class="element-stats-grid">
+            <div class="elem-stat-pill" *ngFor="let item of estadisticas.estadisticasElementos">
+              <span class="elem-name">{{ getEmoji(item.nombre) }} {{ item.nombre }}</span>
+              <div class="elem-metrics">
+                <span>Media: <strong>{{ item.media }}</strong></span>
+                <span>Mediana: <strong>{{ item.mediana }}</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparativa Elemento Real vs Calculado -->
+        <div class="chart-box full-width-chart" style="grid-column: 1 / -1; margin-top: 1rem;">
+          <h3>⚔️ Comparativa Directa: Elemento Real (Signo) vs Elemento Calculado (Encuesta)</h3>
+          <p class="chart-subtext" style="color: #64748B; font-size: 0.82rem; margin-bottom: 1rem;">
+            Matriz de cruce entre el elemento astrológico nativo y el elemento obtenido según sus respuestas en el cuestionario.
+          </p>
+          <div class="comparison-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+            <div 
+              class="comparison-card" 
+              *ngFor="let item of comparativaMatriz"
+              [style.border-left]="item.coincide ? '4px solid #10B981' : '4px solid #F59E0B'"
+              style="background: #ffffff; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;"
+            >
+              <div>
+                <div style="font-size: 0.82rem; color: #64748b;">
+                  Real: <strong>{{ getEmoji(item.elementoReal) }} {{ item.elementoReal }}</strong>
+                </div>
+                <div style="font-size: 0.82rem; color: #1e1b4b; margin-top: 2px;">
+                  Calculado: <strong>{{ getEmoji(item.elementoCalculado) }} {{ item.elementoCalculado }}</strong>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 1.1rem; font-weight: 800; color: #0f172a;">{{ item.count }}</span>
+                <div style="font-size: 0.7rem; font-weight: 700;" [style.color]="item.coincide ? '#10B981' : '#F59E0B'">
+                  {{ item.coincide ? '✓ Coincide' : '≠ Diferente' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filtros Avanzados -->
     <div class="filters-bar">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Buscar Nombre</mat-label>
+        <input matInput [(ngModel)]="filtros.nombre" (keyup.enter)="aplicarFiltros()" placeholder="Nombre de persona..." />
+        <button mat-icon-button matSuffix *ngIf="filtros.nombre" (click)="filtros.nombre = ''; aplicarFiltros()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
       <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Género</mat-label>
         <mat-select [(ngModel)]="filtros.genero" (selectionChange)="aplicarFiltros()">
@@ -96,17 +249,38 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Signo</mat-label>
+        <mat-label>Signo Zodiacal</mat-label>
         <mat-select [(ngModel)]="filtros.signoZodiacalId" (selectionChange)="aplicarFiltros()">
           <mat-option value="">Todos</mat-option>
           <mat-option *ngFor="let s of signos" [value]="s._id">{{ s.nombre }}</mat-option>
         </mat-select>
       </mat-form-field>
 
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Elemento del Signo</mat-label>
+        <mat-select [(ngModel)]="filtros.elementoSigno" (selectionChange)="aplicarFiltros()">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let e of elementos" [value]="e.nombre">{{ getEmoji(e.nombre) }} {{ e.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Elemento Calculado</mat-label>
+        <mat-select [(ngModel)]="filtros.elementoPredominante" (selectionChange)="aplicarFiltros()">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let e of elementos" [value]="e.nombre">{{ getEmoji(e.nombre) }} {{ e.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-button class="btn-clear-filters" (click)="limpiarFiltros()" title="Limpiar todos los filtros">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+
       <span class="results-count">{{ totalEnvios }} registro(s)</span>
     </div>
 
-    <!-- Tabla de envíos -->
+    <!-- Tabla de envíos con datos enriquecidos -->
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
@@ -114,19 +288,35 @@
             <th>Nombre</th>
             <th>Género</th>
             <th>Signo</th>
-            <th>Elemento</th>
-            <th>Fecha</th>
-            <th></th>
+            <th>Elem. Real (Signo)</th>
+            <th>Elem. Encuesta</th>
+            <th>Coincidencia</th>
+            <th>Fecha Registro</th>
+            <th>Detalle</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let env of envios" class="table-row" (click)="verDetalle(env)">
-            <td class="td-nombre">{{ env.personaId?.nombre }}</td>
+            <td class="td-nombre">{{ env.personaId?.nombre || 'Anónimo' }}</td>
             <td>{{ env.personaId?.genero }}</td>
-            <td>{{ getSignoNombre(env.personaId) }}</td>
+            <td><strong>{{ getSignoNombre(env.personaId) }}</strong></td>
+            <td>
+              <span class="elemento-badge" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                {{ getEmoji(getElementoRealNombre(env.personaId)) }} {{ getElementoRealNombre(env.personaId) }}
+              </span>
+            </td>
             <td>
               <span class="elemento-badge" *ngIf="env.predominante">
                 {{ getEmoji(env.predominante?.nombre) }} {{ env.predominante?.nombre }}
+              </span>
+            </td>
+            <td>
+              <span 
+                style="padding: 3px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;"
+                [style.background]="coincidenElementos(env) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'"
+                [style.color]="coincidenElementos(env) ? '#059669' : '#d97706'"
+              >
+                {{ coincidenElementos(env) ? '✓ Coincide' : '≠ Diferente' }}
               </span>
             </td>
             <td class="td-fecha">{{ env.fechaEnvio | date:'dd/MM/yy HH:mm' }}</td>

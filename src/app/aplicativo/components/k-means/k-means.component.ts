@@ -45,6 +45,7 @@ const CLUSTER_COLORS = [
 
 import { PersonaDetailComponent } from '../persona-detail/persona-detail.component';
 
+
 const ELEMENTOS = ['Fuego', 'Agua', 'Tierra', 'Aire'];
 
 @Component({
@@ -276,6 +277,39 @@ export class KMeansComponent {
     });
   }
 
+  get pcaCentroids(): PcaPoint[] {
+    const points = this.pcaPoints;
+    if (points.length === 0) return [];
+
+    const centroidMap: { [key: number]: { sumX: number; sumY: number; sumCX: number; sumCY: number; count: number; color: string } } = {};
+
+    points.forEach(p => {
+      if (!centroidMap[p.cluster]) {
+        centroidMap[p.cluster] = { sumX: 0, sumY: 0, sumCX: 0, sumCY: 0, count: 0, color: p.color };
+      }
+      centroidMap[p.cluster].sumX += p.x;
+      centroidMap[p.cluster].sumY += p.y;
+      centroidMap[p.cluster].sumCX += p.cx;
+      centroidMap[p.cluster].sumCY += p.cy;
+      centroidMap[p.cluster].count++;
+    });
+
+    return Object.keys(centroidMap).map(key => {
+      const c = Number(key);
+      const data = centroidMap[c];
+      return {
+        x: data.sumX / data.count,
+        y: data.sumY / data.count,
+        cx: data.sumCX / data.count,
+        cy: data.sumCY / data.count,
+        cluster: c,
+        color: data.color,
+        name: `Centroide Cluster ${c + 1}`,
+        extraInfo: `(${data.count} elementos)`
+      };
+    });
+  }
+
   // 🎯 GRÁFICA DE PUNTOS 2: Dispersión Distancia al Centroide del Cluster
   get centroidDistancePoints(): PcaPoint[] {
     const coords = this.data?.result?.pca2d || this.data?.result?.pca_2d;
@@ -433,24 +467,126 @@ export class KMeansComponent {
     });
   }
 
+  // 🔄 CENTROIDES para la Rotación Ortogonal 2D
+  get rotatedPcaCentroids(): PcaPoint[] {
+    const coords = this.data?.result?.pca2d_centroides;
+    
+    // Si el backend los envió (nueva versión), los usamos
+    if (coords && coords.length > 0) {
+      const dataCoords = this.data?.result?.pca2d || this.data?.result?.pca_2d || [];
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      dataCoords.forEach(([x, y]) => {
+        const rx = y, ry = -x;
+        if (rx < minX) minX = rx;
+        if (rx > maxX) maxX = rx;
+        if (ry < minY) minY = ry;
+        if (ry > maxY) maxY = ry;
+      });
+
+      if (minX === Infinity) { minX = -1; maxX = 1; minY = -1; maxY = 1; }
+
+      const rangeX = maxX - minX || 1;
+      const rangeY = maxY - minY || 1;
+      const width = 560;
+      const height = 280;
+      const padding = 35;
+
+      return coords.map(([x, y], idx) => {
+        const rx = y;
+        const ry = -x;
+        const cluster = idx;
+        const cx = padding + ((rx - minX) / rangeX) * (width - 2 * padding);
+        const cy = height - (padding + ((ry - minY) / rangeY) * (height - 2 * padding));
+        return {
+          x: rx,
+          y: ry,
+          cx,
+          cy,
+          cluster,
+          color: this.getClusterColor(cluster),
+          name: `Centroide ${cluster + 1}`,
+          extraInfo: `Centro del Cluster ${cluster + 1}`
+        };
+      });
+    }
+    
+    // Si NO los envió (ej. sesión anterior), los calculamos manualmente promediando los puntos
+    const points = this.rotatedPcaPoints;
+    if (points.length === 0) return [];
+
+    const centroidMap: { [key: number]: { sumX: number; sumY: number; sumCX: number; sumCY: number; count: number; color: string } } = {};
+
+    points.forEach(p => {
+      if (!centroidMap[p.cluster]) {
+        centroidMap[p.cluster] = { sumX: 0, sumY: 0, sumCX: 0, sumCY: 0, count: 0, color: p.color };
+      }
+      centroidMap[p.cluster].sumX += p.x;
+      centroidMap[p.cluster].sumY += p.y;
+      centroidMap[p.cluster].sumCX += p.cx;
+      centroidMap[p.cluster].sumCY += p.cy;
+      centroidMap[p.cluster].count++;
+    });
+
+    return Object.keys(centroidMap).map(key => {
+      const c = Number(key);
+      const data = centroidMap[c];
+      return {
+        x: data.sumX / data.count,
+        y: data.sumY / data.count,
+        cx: data.sumCX / data.count,
+        cy: data.sumCY / data.count,
+        cluster: c,
+        color: data.color,
+        name: `Centroide Cluster ${c + 1}`,
+        extraInfo: `Centro calculado (${data.count} elementos)`
+      };
+    });
+  }
+
   // ==================== GRÁFICAS ESTADÍSTICAS Y DISTRIBUCIÓN ====================
 
-  // Gráfica Estadística A: Desglose por Elementos en cada Cluster
-  get elementDistributionByCluster(): { clusterId: number; color: string; fuego: number; agua: number; tierra: number; aire: number; total: number }[] {
+  // Gráfica Estadística A: Desglose por Elementos en cada Cluster (Calculado vs Real)
+  get elementDistributionByCluster(): {
+    clusterId: number;
+    color: string;
+    total: number;
+    calculados: { fuego: number; agua: number; tierra: number; aire: number };
+    reales: { fuego: number; agua: number; tierra: number; aire: number };
+  }[] {
     if (!this.data?.personas) return [];
 
-    const grouped: { [key: number]: { fuego: number; agua: number; tierra: number; aire: number; total: number } } = {};
+    const grouped: {
+      [key: number]: {
+        calculados: { fuego: number; agua: number; tierra: number; aire: number };
+        reales: { fuego: number; agua: number; tierra: number; aire: number };
+        total: number;
+      }
+    } = {};
 
     this.data.personas.forEach(p => {
       const c = p.cluster ?? 0;
-      if (!grouped[c]) grouped[c] = { fuego: 0, agua: 0, tierra: 0, aire: 0, total: 0 };
+      if (!grouped[c]) {
+        grouped[c] = {
+          calculados: { fuego: 0, agua: 0, tierra: 0, aire: 0 },
+          reales: { fuego: 0, agua: 0, tierra: 0, aire: 0 },
+          total: 0
+        };
+      }
 
-      const el = (p.elementoEncuesta || p.elementoPredominanteId || p.elementoSigno || '').toLowerCase();
-      if (el.includes('fuego')) grouped[c].fuego++;
-      else if (el.includes('agua')) grouped[c].agua++;
-      else if (el.includes('tierra')) grouped[c].tierra++;
-      else if (el.includes('aire')) grouped[c].aire++;
-      else grouped[c].fuego++;
+      // Elemento Calculado (Encuesta)
+      const elCalc = (p.elementoEncuesta || p.elementoPredominante || p.elementoPredominanteId || '').toLowerCase();
+      if (elCalc.includes('fuego')) grouped[c].calculados.fuego++;
+      else if (elCalc.includes('agua')) grouped[c].calculados.agua++;
+      else if (elCalc.includes('tierra')) grouped[c].calculados.tierra++;
+      else if (elCalc.includes('aire')) grouped[c].calculados.aire++;
+
+      // Elemento Real (Signo Zodiacal)
+      const elReal = (p.elementoSigno || (p as any).signoZodiacalId?.elementoId?.nombre || '').toLowerCase();
+      if (elReal.includes('fuego')) grouped[c].reales.fuego++;
+      else if (elReal.includes('agua')) grouped[c].reales.agua++;
+      else if (elReal.includes('tierra')) grouped[c].reales.tierra++;
+      else if (elReal.includes('aire')) grouped[c].reales.aire++;
+
       grouped[c].total++;
     });
 
@@ -523,12 +659,12 @@ export class KMeansComponent {
   get clusterMajorities(): ClusterMajoritySummary[] {
     if (!this.data?.personas) return [];
 
-    const grouped: { 
-      [key: number]: { 
+    const grouped: {
+      [key: number]: {
         real: { fuego: number; agua: number; tierra: number; aire: number };
         calc: { fuego: number; agua: number; tierra: number; aire: number };
         total: number;
-      } 
+      }
     } = {};
 
     this.data.personas.forEach(p => {

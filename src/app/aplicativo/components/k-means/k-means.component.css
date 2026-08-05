@@ -128,7 +128,7 @@
 /* SECCIÓN DE GRÁFICAS EN GRID RESPONSIVO */
 .charts-scatter-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -887,21 +887,45 @@
 }
 
 .table-detail-column {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 480px;
-  max-width: 55%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 600px;
   background: #ffffff;
   border-radius: 0;
   border: 1px solid rgba(124, 58, 237, 0.2);
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.3);
   overflow: hidden;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  z-index: 100;
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 9999;
+  animation: fadeInModal 0.3s ease;
+}
+
+/* Oscurecer el fondo cuando se abre el modal (Se eliminó ::before y se movió a HTML) */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeInModal {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 @keyframes slideInRight {

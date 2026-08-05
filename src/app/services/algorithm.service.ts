@@ -9,6 +9,7 @@ export interface KMeansParams {
   ids?: string[];
   questions?: string[];
   customDataset?: any;
+  rutaModelo?: string;
 }
 
 export interface HierarchicalParams {
@@ -18,6 +19,7 @@ export interface HierarchicalParams {
   ids?: string[];
   questions?: string[];
   customDataset?: any;
+  rutaModelo?: string;
 }
 
 export interface PersonaCluster {
@@ -26,8 +28,10 @@ export interface PersonaCluster {
   nombre: string;
   genero: string;
   signoZodiacal?: string;
+  signoZodiacalId?: any;
   elementoSigno?: string;
   elementoEncuesta?: string;
+  elementoPredominante?: string;
   elementoPredominanteId?: string;
   cluster: number;
 }
@@ -43,7 +47,9 @@ export interface KMeansResultResponse {
     inercia: number;
     pca_2d?: number[][];
     pca2d?: number[][];
+    pca2d_centroides?: number[][];
     silhouette_score?: number;
+    rutaModelo?: string;
   };
 }
 
@@ -59,6 +65,7 @@ export interface HierarchicalResultResponse {
     dendrogram_data?: any;
     pca2d?: number[][];
     pca_2d?: number[][];
+    rutaModelo?: string;
   };
 }
 

@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { MatInputModule } from '@angular/material/input';
 
 const ELEMENTO_EMOJI: Record<string, string> = {
   'Fuego': '🔥', 'Tierra': '🌿', 'Aire': '💨', 'Agua': '🌊'
@@ -19,7 +20,7 @@ const ELEMENTO_EMOJI: Record<string, string> = {
   standalone: true,
   imports: [
     CommonModule, RouterModule, FormsModule,
-    MatIconModule, MatButtonModule, MatSelectModule, MatFormFieldModule
+    MatIconModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
@@ -38,7 +39,8 @@ export class AdminDashboardComponent implements OnInit {
   detalleEnvio: any = null;
   cargandoDetalle = false;
 
-  filtros = { genero: '', signoZodiacalId: '' };
+  elementos: any[] = [];
+  filtros = { nombre: '', genero: '', signoZodiacalId: '', elementoSigno: '', elementoPredominante: '' };
 
   // Exportar Dataset para Algoritmos
   headerMode: 'short' | 'full' = 'short';
@@ -51,6 +53,7 @@ export class AdminDashboardComponent implements OnInit {
   ngOnInit() {
     this.api.getCatalogos().subscribe(res => {
       this.signos = res.signos;
+      this.elementos = res.elementos;
     });
     this.cargarDatos();
   }
@@ -64,8 +67,11 @@ export class AdminDashboardComponent implements OnInit {
 
   cargarEnvios() {
     const filtrosApi: any = {};
+    if (this.filtros.nombre) filtrosApi.nombre = this.filtros.nombre;
     if (this.filtros.genero) filtrosApi.genero = this.filtros.genero;
     if (this.filtros.signoZodiacalId) filtrosApi.signoZodiacalId = this.filtros.signoZodiacalId;
+    if (this.filtros.elementoSigno) filtrosApi.elementoSigno = this.filtros.elementoSigno;
+    if (this.filtros.elementoPredominante) filtrosApi.elementoPredominante = this.filtros.elementoPredominante;
 
     this.api.getEnvios(50, 0, filtrosApi).subscribe(res => {
       this.envios = res.envios;
@@ -95,10 +101,18 @@ export class AdminDashboardComponent implements OnInit {
     this.cargarEnvios();
   }
 
+  limpiarFiltros() {
+    this.filtros = { nombre: '', genero: '', signoZodiacalId: '', elementoSigno: '', elementoPredominante: '' };
+    this.cargarEnvios();
+  }
+
   exportarCsv() {
     let url = `${environment.apiUrl}/envios/exportar?formato=csv`;
+    if (this.filtros.nombre) url += `&nombre=${encodeURIComponent(this.filtros.nombre)}`;
     if (this.filtros.genero) url += `&genero=${this.filtros.genero}`;
     if (this.filtros.signoZodiacalId) url += `&signoZodiacalId=${this.filtros.signoZodiacalId}`;
+    if (this.filtros.elementoSigno) url += `&elementoSigno=${this.filtros.elementoSigno}`;
+    if (this.filtros.elementoPredominante) url += `&elementoPredominante=${this.filtros.elementoPredominante}`;
     window.open(url, '_blank');
   }
 
@@ -131,8 +145,36 @@ export class AdminDashboardComponent implements OnInit {
     return persona?.signoZodiacalId?.nombre ?? 'N/A';
   }
 
+  getElementoRealNombre(persona: any): string {
+    return persona?.signoZodiacalId?.elementoId?.nombre ?? 'N/A';
+  }
+
   getPredominante(env: any): string {
     return (env?.predominante as any)?.nombre ?? 'N/A';
+  }
+
+  coincidenElementos(env: any): boolean {
+    const real = this.getElementoRealNombre(env?.personaId);
+    const pred = this.getPredominante(env);
+    return real !== 'N/A' && pred !== 'N/A' && real.toLowerCase() === pred.toLowerCase();
+  }
+
+  get porcentajeCoincidencia(): number {
+    const list = this.estadisticas?.comparativaElementos || [];
+    if (list.length === 0) return 0;
+    const total = list.reduce((acc: number, item: any) => acc + item.count, 0);
+    const coincidences = list.filter((item: any) => item.coincide).reduce((acc: number, item: any) => acc + item.count, 0);
+    return total > 0 ? Number(((coincidences / total) * 100).toFixed(1)) : 0;
+  }
+
+  get comparativaMatriz(): { elementoReal: string; elementoCalculado: string; count: number; coincide: boolean }[] {
+    return this.estadisticas?.comparativaElementos || [];
+  }
+
+  getMaxElementCount(): number {
+    if (!this.estadisticas?.distribucionElementos) return 1;
+    const counts = this.estadisticas.distribucionElementos.map((e: any) => e.count);
+    return Math.max(...counts, 1);
   }
 
   logout() {

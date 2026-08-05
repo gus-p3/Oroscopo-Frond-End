@@ -84,6 +84,31 @@
                   <title>{{ point.name }} - {{ point.extraInfo }} (Cluster {{ point.cluster + 1 }})</title>
                 </circle>
               }
+              
+              <!-- Centroides de Clusters -->
+              @for (cen of pcaCentroids; track cen.cluster) {
+                <path 
+                  [attr.d]="'M ' + (cen.cx - 8) + ' ' + (cen.cy - 8) + ' L ' + (cen.cx + 8) + ' ' + (cen.cy + 8) + ' M ' + (cen.cx - 8) + ' ' + (cen.cy + 8) + ' L ' + (cen.cx + 8) + ' ' + (cen.cy - 8)" 
+                  stroke="#1E293B" 
+                  stroke-width="3" 
+                />
+                <path 
+                  [attr.d]="'M ' + (cen.cx - 8) + ' ' + (cen.cy - 8) + ' L ' + (cen.cx + 8) + ' ' + (cen.cy + 8) + ' M ' + (cen.cx - 8) + ' ' + (cen.cy + 8) + ' L ' + (cen.cx + 8) + ' ' + (cen.cy - 8)" 
+                  [attr.stroke]="cen.color" 
+                  stroke-width="2" 
+                >
+                  <title>{{ cen.name }}</title>
+                </path>
+                <circle 
+                  [attr.cx]="cen.cx" 
+                  [attr.cy]="cen.cy" 
+                  r="14" 
+                  fill="transparent" 
+                  stroke="#1E293B" 
+                  stroke-width="1.5" 
+                  stroke-dasharray="4 2"
+                />
+              }
             </svg>
 
             <div class="chart-legend">
@@ -313,6 +338,20 @@
                   <title>{{ point.name }} - {{ point.extraInfo }} (Cluster {{ point.cluster + 1 }})</title>
                 </circle>
               }
+
+              <!-- CENTROIDES (Como cuadrados o estrellas) -->
+              @for (centroid of rotatedPcaCentroids; track 'centroid-' + centroid.cluster) {
+                <g [attr.transform]="'translate(' + centroid.cx + ',' + centroid.cy + ')'" style="cursor: help;">
+                  <!-- Estrella o Cuadrado para el centroide -->
+                  <polygon 
+                    points="0,-12 3.5,-3.5 12,-3.5 5,2 7.5,10.5 0,6 -7.5,10.5 -5,2 -12,-3.5 -3.5,-3.5"
+                    [attr.fill]="centroid.color"
+                    stroke="#111"
+                    stroke-width="1.5"
+                  ></polygon>
+                  <title>{{ centroid.name }} - {{ centroid.extraInfo }}</title>
+                </g>
+              }
             </svg>
 
             <div class="chart-legend">
@@ -380,11 +419,27 @@
               <div class="cluster-block-title" [style.color]="c.color">
                 Cluster {{ c.clusterId + 1 }} (Total: {{ c.total }})
               </div>
+
+              <!-- Elementos Calculados (Encuesta) -->
+              <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; margin-top: 6px; margin-bottom: 3px;">
+                📊 Calculados (Encuesta):
+              </div>
               <div class="element-chips-row">
-                <span class="el-chip chip-fire">🔥 Fuego: {{ c.fuego }}</span>
-                <span class="el-chip chip-water">🌊 Agua: {{ c.agua }}</span>
-                <span class="el-chip chip-earth">⛰️ Tierra: {{ c.tierra }}</span>
-                <span class="el-chip chip-air">🍃 Aire: {{ c.aire }}</span>
+                <span class="el-chip chip-fire">🔥 Fuego: {{ c.calculados.fuego }}</span>
+                <span class="el-chip chip-water">🌊 Agua: {{ c.calculados.agua }}</span>
+                <span class="el-chip chip-earth">⛰️ Tierra: {{ c.calculados.tierra }}</span>
+                <span class="el-chip chip-air">🍃 Aire: {{ c.calculados.aire }}</span>
+              </div>
+
+              <!-- Elementos Reales (Signo Zodiacal) -->
+              <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; margin-top: 10px; margin-bottom: 3px;">
+                ✨ Reales (Signo Zodiacal):
+              </div>
+              <div class="element-chips-row">
+                <span class="el-chip chip-fire">🔥 Fuego: {{ c.reales.fuego }}</span>
+                <span class="el-chip chip-water">🌊 Agua: {{ c.reales.agua }}</span>
+                <span class="el-chip chip-earth">⛰️ Tierra: {{ c.reales.tierra }}</span>
+                <span class="el-chip chip-air">🍃 Aire: {{ c.reales.aire }}</span>
               </div>
             </div>
           }
@@ -706,22 +761,24 @@
           </div>
         </div>
 
-        <!-- PANEL DE ASPECTOS AL LADO DE LA TABLA -->
-        @if (selectedPersonaId) {
-          <div class="table-detail-column">
-            <app-persona-detail 
-              [idPersona]="selectedPersonaId" 
-              [personaData]="selectedPersonaData"
-              (close)="closePersonaDetail()"
-            ></app-persona-detail>
-          </div>
-        }
       </div>
     </div>
   } @else {
     <div class="empty-results">
       <span class="empty-icon">📊</span>
       <p>Configura los parámetros del formulario y presiona <strong>"Enviar y Ver Resultados"</strong> para visualizar el gráfico y las métricas.</p>
+    </div>
+  }
+
+  <!-- PANEL DE ASPECTOS (MODAL) -->
+  @if (selectedPersonaId) {
+    <div class="modal-backdrop" (click)="closePersonaDetail()"></div>
+    <div class="table-detail-column">
+      <app-persona-detail 
+        [idPersona]="selectedPersonaId" 
+        [personaData]="selectedPersonaData"
+        (close)="closePersonaDetail()"
+      ></app-persona-detail>
     </div>
   }
 </div>
