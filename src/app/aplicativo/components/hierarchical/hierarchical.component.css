@@ -876,50 +876,58 @@
   box-shadow: 0 3px 8px rgba(124, 58, 237, 0.25);
 }
 
-/* MODAL POPUP CENTRADO DE DETALLES DE PERSONALIDAD */
-.drawer-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 999998;
-  animation: fadeIn 0.2s ease;
+/* LAYOUT FLEXIBLE AL LADO DE LA TABLA PARA DETALLES DE PERSONALIDAD */
+.table-with-detail-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  align-items: flex-start;
+  transition: all 0.3s ease;
 }
 
-.drawer-slide-panel {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 560px;
-  max-width: 92vw;
-  max-height: 85vh;
+.table-content-column {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.table-detail-column {
+  width: 480px;
+  max-width: 45%;
+  flex-shrink: 0;
   background: #ffffff;
   border-radius: 24px;
-  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.35);
   border: 1px solid rgba(124, 58, 237, 0.2);
-  z-index: 999999;
-  overflow-y: auto;
-  animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+  position: sticky;
+  top: 90px;
+  max-height: calc(100vh - 110px);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modalPopIn {
+@keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translate(-50%, -46%) scale(0.96);
+    transform: translateX(30px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .table-with-detail-container.has-detail-open {
+    flex-direction: column;
+  }
+  .table-detail-column {
+    width: 100%;
+    max-width: 100%;
+    position: static;
   }
 }
 

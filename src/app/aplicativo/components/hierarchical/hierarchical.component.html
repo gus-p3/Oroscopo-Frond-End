@@ -674,142 +674,137 @@
         </div>
       </div>
 
-      <!-- Tabla Estilizada Paginada -->
-      <div class="table-responsive">
-        <table class="liquid-table">
-          <thead>
-            <tr>
-              <th class="th-num">#</th>
-              <th>Persona</th>
-              <th>Género</th>
-              <th>Signo Zodiacal</th>
-              <th>Elemento del Signo</th>
-              <th>Elemento Resultante (Encuesta)</th>
-              <th class="th-center">Cluster Asignado</th>
-              <th class="th-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (person of paginatedRows; track person.id || person._id; let i = $index) {
-              <tr class="table-row clickable-row" (click)="openPersonaDetail(person)">
-                <td class="td-num">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
-                <td class="td-person">
-                  <span class="avatar-icon">👤</span>
-                  <span class="person-fullname">{{ person.nombre }}</span>
-                </td>
-                <td class="td-gender">{{ person.genero }}</td>
-                <td>
-                  <span class="glass-badge badge-sign">
-                    ⭐ {{ person.signoZodiacal || 'Desconocido' }}
-                  </span>
-                </td>
-                <td>
-                  <span class="glass-badge badge-sign-element">
-                    🔥 {{ person.elementoSigno || 'N/A' }}
-                  </span>
-                </td>
-                <td>
-                  <span class="glass-badge badge-survey-element">
-                    🎯 {{ person.elementoEncuesta || person.elementoPredominanteId || 'N/A' }}
-                  </span>
-                </td>
-                <td class="td-center">
-                  <span 
-                    class="glass-badge badge-cluster"
-                    [style.background-color]="getClusterColor(person.cluster) + '22'"
-                    [style.color]="getClusterColor(person.cluster)"
-                    [style.border-color]="getClusterColor(person.cluster) + '44'"
-                  >
-                    Cluster {{ (person.cluster ?? 0) + 1 }}
-                  </span>
-                </td>
-                <td class="td-center">
-                  <button 
-                    class="btn-view-detail" 
-                    (click)="$event.stopPropagation(); openPersonaDetail(person)"
-                    title="Ver aspectos de personalidad"
-                  >
-                    👁️ Aspectos
-                  </button>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="8" style="text-align: center; padding: 30px; color: #64748B; font-weight: 500;">
-                  No se encontraron personas con los filtros seleccionados.
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <!-- Layout Flexible Tabla + Panel Lateral de Aspectos al Lado -->
+      <div class="table-with-detail-container" [class.has-detail-open]="!!selectedPersonaId">
+        <div class="table-content-column">
+          <!-- Tabla Estilizada Paginada -->
+          <div class="table-responsive">
+            <table class="liquid-table">
+              <thead>
+                <tr>
+                  <th class="th-num">#</th>
+                  <th>Persona</th>
+                  <th>Género</th>
+                  <th>Signo Zodiacal</th>
+                  <th>Elemento del Signo</th>
+                  <th>Elemento Resultante (Encuesta)</th>
+                  <th class="th-center">Cluster Asignado</th>
+                  <th class="th-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (person of paginatedRows; track person.id || person._id; let i = $index) {
+                  <tr class="table-row clickable-row" (click)="openPersonaDetail(person)">
+                    <td class="td-num">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                    <td class="td-person">
+                      <span class="avatar-icon">👤</span>
+                      <span class="person-fullname">{{ person.nombre }}</span>
+                    </td>
+                    <td class="td-gender">{{ person.genero }}</td>
+                    <td>
+                      <span class="glass-badge badge-sign">
+                        ⭐ {{ person.signoZodiacal || 'Desconocido' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="glass-badge badge-sign-element">
+                        🔥 {{ person.elementoSigno || 'N/A' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="glass-badge badge-survey-element">
+                        🎯 {{ person.elementoEncuesta || person.elementoPredominanteId || 'N/A' }}
+                      </span>
+                    </td>
+                    <td class="td-center">
+                      <span 
+                        class="glass-badge badge-cluster"
+                        [style.background-color]="getClusterColor(person.cluster) + '22'"
+                        [style.color]="getClusterColor(person.cluster)"
+                        [style.border-color]="getClusterColor(person.cluster) + '44'"
+                      >
+                        Cluster {{ (person.cluster ?? 0) + 1 }}
+                      </span>
+                    </td>
+                    <td class="td-center">
+                      <button 
+                        class="btn-view-detail" 
+                        (click)="$event.stopPropagation(); openPersonaDetail(person)"
+                        title="Ver aspectos de personalidad"
+                      >
+                        👁️ Aspectos
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8" style="text-align: center; padding: 30px; color: #64748B; font-weight: 500;">
+                      No se encontraron personas con los filtros seleccionados.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- CONTROLES DE PAGINACIÓN -->
+          <div class="pagination-footer">
+            <div class="page-size-selector">
+              <label for="pageSizeSelect">Registros por página:</label>
+              <select 
+                id="pageSizeSelect" 
+                class="select-page-size" 
+                [ngModel]="pageSize" 
+                (ngModelChange)="onPageSizeChange($event)"
+              >
+                @for (opt of pageSizeOptions; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="page-counter-text">
+              Mostrando <strong>{{ pageStart }}</strong> a <strong>{{ pageEnd }}</strong> de <strong>{{ totalRowsCount }}</strong> registros
+            </div>
+
+            <div class="pagination-controls">
+              <button 
+                class="page-nav-btn" 
+                [disabled]="currentPage === 1" 
+                (click)="goToPage(currentPage - 1)"
+              >
+                ‹ Anterior
+              </button>
+
+              @for (page of pagesArray; track page) {
+                <button 
+                  class="page-num-btn" 
+                  [class.active]="page === currentPage" 
+                  (click)="goToPage(page)"
+                >
+                  {{ page }}
+                </button>
+              }
+
+              <button 
+                class="page-nav-btn" 
+                [disabled]="currentPage === totalPages" 
+                (click)="goToPage(currentPage + 1)"
+              >
+                Siguiente ›
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL DE ASPECTOS AL LADO DE LA TABLA -->
+        @if (selectedPersonaId) {
+          <div class="table-detail-column">
+            <app-persona-detail 
+              [idPersona]="selectedPersonaId" 
+              [personaData]="selectedPersonaData"
+              (close)="closePersonaDetail()"
+            ></app-persona-detail>
+          </div>
+        }
       </div>
-
-      <!-- CONTROLES DE PAGINACIÓN -->
-      <div class="pagination-footer">
-        <div class="page-size-selector">
-          <label for="pageSizeSelect">Registros por página:</label>
-          <select 
-            id="pageSizeSelect" 
-            class="select-page-size" 
-            [ngModel]="pageSize" 
-            (ngModelChange)="onPageSizeChange($event)"
-          >
-            @for (opt of pageSizeOptions; track opt) {
-              <option [value]="opt">{{ opt }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="page-counter-text">
-          Mostrando <strong>{{ pageStart }}</strong> a <strong>{{ pageEnd }}</strong> de <strong>{{ totalRowsCount }}</strong> registros
-        </div>
-
-        <div class="pagination-controls">
-          <button 
-            class="page-nav-btn" 
-            [disabled]="currentPage === 1" 
-            (click)="goToPage(currentPage - 1)"
-          >
-            ‹ Anterior
-          </button>
-
-          @for (page of pagesArray; track page) {
-            <button 
-              class="page-num-btn" 
-              [class.active]="page === currentPage" 
-              (click)="goToPage(page)"
-            >
-              {{ page }}
-            </button>
-          }
-
-          <button 
-            class="page-nav-btn" 
-            [disabled]="currentPage === totalPages" 
-            (click)="goToPage(currentPage + 1)"
-          >
-            Siguiente ›
-          </button>
-        </div>
-      </div>
-
-    </div>
-  } @else {
-    <div class="empty-results">
-      <span class="empty-icon">🌳</span>
-      <p>Configura los parámetros del formulario y presiona <strong>"Enviar y Ver Resultados"</strong> para visualizar el dendrograma, gráficos y métricas.</p>
-    </div>
-  }
-</div>
-
-<!-- BACKDROP Y PANEL LATERAL (OFFCANVAS DRAWER) -->
-@if (selectedPersonaId) {
-  <div class="drawer-backdrop" (click)="closePersonaDetail()"></div>
-  <div class="drawer-slide-panel">
-    <app-persona-detail 
-      [idPersona]="selectedPersonaId" 
-      [personaData]="selectedPersonaData"
-      (close)="closePersonaDetail()"
-    ></app-persona-detail>
-  </div>
-}
