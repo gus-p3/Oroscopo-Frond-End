@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, Output, EventEmitter, inject, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PersonaService } from '../../../services/persona.service';
 
@@ -31,6 +31,7 @@ export class PersonaDetailComponent implements OnInit, OnChanges {
   aspectosList: any[] = [];
 
   private personaService = inject(PersonaService);
+  private elRef = inject(ElementRef);
 
   ngOnInit(): void {
     if (this.personaData) {
@@ -48,23 +49,23 @@ export class PersonaDetailComponent implements OnInit, OnChanges {
     }
   }
 
-  cargarDetallesDesdeObjeto(data: any) {
-    this.loading = true;
-    this.errorMessage = '';
+  private resetScroll(): void {
+    setTimeout(() => {
+      // Usar elRef para apuntar al scroll del componente actual, no de toda la página
+      const scrollEl = this.elRef.nativeElement.querySelector('.drawer-scroll-content');
+      if (scrollEl) scrollEl.scrollTop = 0;
+    }, 0);
+  }
+
+  private buildElementosList(rawElementos: [string, number][], elementoNombre: string) {
+    let maxPuntaje = 0;
+    rawElementos.forEach(([_, p]) => { if (p > maxPuntaje) maxPuntaje = p; });
+
     this.elementoGanador = null;
     this.ganadorMeta = null;
 
-    this.datosUsuario = data;
-    this.aspectosList = data.aspectos || [];
-
-    const rawElementos = data.puntajesElementos || [];
-    let maxPuntaje = 0;
-    rawElementos.forEach(([_, p]: [string, number]) => {
-      if (p > maxPuntaje) maxPuntaje = p;
-    });
-
-    this.elementosList = rawElementos.map(([nombreElemento, puntajeTotal]: [string, number]) => {
-      const isWinner = nombreElemento === data.elementoNombre || puntajeTotal === maxPuntaje;
+    this.elementosList = rawElementos.map(([nombreElemento, puntajeTotal]) => {
+      const isWinner = nombreElemento === elementoNombre || puntajeTotal === maxPuntaje;
       const meta = ELEMENTO_META[nombreElemento] ?? {
         emoji: '✦',
         color: '#a78bfa',
@@ -84,55 +85,31 @@ export class PersonaDetailComponent implements OnInit, OnChanges {
         meta
       };
     });
+  }
 
+  cargarDetallesDesdeObjeto(data: any) {
+    this.loading = true;
+    this.errorMessage = '';
+    this.datosUsuario = data;
+    this.aspectosList = data.aspectos || [];
+    this.buildElementosList(data.puntajesElementos || [], data.elementoNombre);
     this.loading = false;
-    setTimeout(() => {
-      const scrollEl = document.querySelector('.drawer-scroll-content');
-      if (scrollEl) scrollEl.scrollTop = 0;
-    }, 0);
+    this.resetScroll();
   }
 
   cargarDetalles(id: string) {
     this.loading = true;
     this.errorMessage = '';
-    this.elementoGanador = null;
-    this.ganadorMeta = null;
+    this.datosUsuario = null;
 
     this.personaService.getPersonaPersonalidadID(id).subscribe({
       next: (res: any) => {
         const data = res?.result || res;
         this.datosUsuario = data;
         this.aspectosList = data?.aspectos || [];
-
-        const rawElementos = data?.puntajesElementos || [];
-        let maxPuntaje = 0;
-        rawElementos.forEach(([_, p]: [string, number]) => {
-          if (p > maxPuntaje) maxPuntaje = p;
-        });
-
-        this.elementosList = rawElementos.map(([nombreElemento, puntajeTotal]: [string, number]) => {
-          const isWinner = nombreElemento === data?.elementoNombre || puntajeTotal === maxPuntaje;
-          const meta = ELEMENTO_META[nombreElemento] ?? {
-            emoji: '✦',
-            color: '#a78bfa',
-            gradient: 'linear-gradient(135deg, #a78bfa, #7c3aed)'
-          };
-
-          if (isWinner && !this.elementoGanador) {
-            this.elementoGanador = { nombre: nombreElemento, puntajeTotal };
-            this.ganadorMeta = meta;
-          }
-
-          return {
-            nombre: nombreElemento,
-            puntajeTotal,
-            porcentaje: maxPuntaje > 0 ? Math.round((puntajeTotal / maxPuntaje) * 100) : 0,
-            esPredominante: isWinner,
-            meta
-          };
-        });
-
+        this.buildElementosList(data?.puntajesElementos || [], data?.elementoNombre);
         this.loading = false;
+        this.resetScroll();
       },
       error: (err) => {
         console.error('Error al cargar persona:', err);
