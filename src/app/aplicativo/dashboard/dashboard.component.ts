@@ -480,4 +480,95 @@ export class DashboardComponent implements OnInit {
       error: (err) => console.error('Error al exportar JSON:', err)
     });
   }
+
+  // ─── MÉTODOS DE IMPORTACIÓN Y EXPORTACIÓN DE LA BITÁCORA ──────────────────
+
+  exportBitacoraCSV() {
+    if (this.bitacoraLogs.length === 0) return;
+    const headers = ['Fecha', 'Algoritmo', 'Registros (Personas)', 'Dimensiones (Preguntas)', 'Parametros', 'Tiempo Respuesta (ms)'];
+    const rows = this.bitacoraLogs.map(log => {
+      const fechaStr = new Date(log.fecha).toLocaleString();
+      const paramsStr = log.algoritmo === 'K-Means' || log.algoritmo === 'kmeans'
+        ? `k=${log.parametros?.k || '-'};pca=${log.parametros?.pca ? 'Si' : 'No'}` 
+        : `linkage=${log.parametros?.metodoEnlace || '-'}`;
+      return [
+        `"${fechaStr}"`,
+        `"${log.algoritmo}"`,
+        `"${log.totalPersonas}"`,
+        `"${log.totalPreguntas}"`,
+        `"${paramsStr}"`,
+        `"${log.tiempoRespuestaMs || '-'}"`
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    this.downloadFile(csvContent, `bitacora_completa_${Date.now()}.csv`, 'text/csv;charset=utf-8;');
+  }
+
+  exportBitacoraJSON() {
+    if (this.bitacoraLogs.length === 0) return;
+    const jsonContent = JSON.stringify(this.bitacoraLogs, null, 2);
+    this.downloadFile(jsonContent, `bitacora_completa_${Date.now()}.json`, 'application/json');
+  }
+
+  exportSingleBitacoraCSV(log: any) {
+    const headers = ['Fecha', 'Algoritmo', 'Registros (Personas)', 'Dimensiones (Preguntas)', 'Parametros', 'Tiempo Respuesta (ms)'];
+    const fechaStr = new Date(log.fecha).toLocaleString();
+    const paramsStr = log.algoritmo === 'K-Means' || log.algoritmo === 'kmeans'
+      ? `k=${log.parametros?.k || '-'};pca=${log.parametros?.pca ? 'Si' : 'No'}` 
+      : `linkage=${log.parametros?.metodoEnlace || '-'}`;
+    const row = [
+      `"${fechaStr}"`,
+      `"${log.algoritmo}"`,
+      `"${log.totalPersonas}"`,
+      `"${log.totalPreguntas}"`,
+      `"${paramsStr}"`,
+      `"${log.tiempoRespuestaMs || '-'}"`
+    ];
+
+    const csvContent = [headers.join(','), row.join(',')].join('\n');
+    const safeName = String(log.algoritmo).replace(/\s+/g, '_');
+    this.downloadFile(csvContent, `bitacora_${safeName}_${Date.now()}.csv`, 'text/csv;charset=utf-8;');
+  }
+
+  exportSingleBitacoraJSON(log: any) {
+    const jsonContent = JSON.stringify(log, null, 2);
+    const safeName = String(log.algoritmo).replace(/\s+/g, '_');
+    this.downloadFile(jsonContent, `bitacora_${safeName}_${Date.now()}.json`, 'application/json');
+  }
+
+  importBitacoraJSON(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        
+        if (Array.isArray(imported)) {
+          const validLogs = imported.filter(item => this.isValidLogStructure(item));
+          if (validLogs.length === 0) throw new Error('Estructura de logs no válida en el archivo JSON.');
+          
+          this.bitacoraLogs = [...validLogs, ...this.bitacoraLogs];
+          this.bitacoraSuccessMessage = `¡Se importaron ${validLogs.length} corridas con éxito!`;
+        } else {
+          if (!this.isValidLogStructure(imported)) throw new Error('Estructura de log no válida en el archivo JSON.');
+          
+          this.bitacoraLogs.unshift(imported);
+          this.bitacoraSuccessMessage = '¡Se importó 1 corrida con éxito!';
+        }
+        
+        event.target.value = '';
+      } catch (err: any) {
+        this.errorMessage = `Error al importar archivo JSON: ${err.message}`;
+        event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  private isValidLogStructure(log: any): boolean {
+    return log && typeof log === 'object' && log.fecha && log.algoritmo && log.resultadoCompleto;
+  }
 }

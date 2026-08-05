@@ -476,11 +476,25 @@
           @if (bitacoraLogs.length > 0) {
             <section class="bitacora-section">
               <div class="config-card bitacora-card">
-                <div class="card-header">
-                  <span class="config-icon">📋</span>
-                  <div>
-                    <h2 class="config-title">Historial de Corridas Guardadas</h2>
-                    <p class="config-subtitle">Ejecuciones almacenadas en la base de datos y la sesión actual</p>
+                <div class="card-header flex-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 1rem;">
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="config-icon">📋</span>
+                    <div>
+                      <h2 class="config-title">Historial de Corridas Guardadas</h2>
+                      <p class="config-subtitle">Ejecuciones almacenadas en la base de datos y la sesión actual</p>
+                    </div>
+                  </div>
+                  <div class="bitacora-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <input type="file" #importInput style="display: none;" accept=".json" (change)="importBitacoraJSON($event)">
+                    <button class="btn-action-sm btn-import" (click)="importInput.click()" style="background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.4); color: #C084FC; display: flex; align-items: center; gap: 0.25rem;" title="Importar Corrida JSON">
+                      📥 Importar JSON
+                    </button>
+                    <button class="btn-action-sm" (click)="exportBitacoraJSON()" style="background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.4); color: #22D3EE; display: flex; align-items: center; gap: 0.25rem;" title="Exportar Todo a JSON">
+                      📤 Exportar JSON
+                    </button>
+                    <button class="btn-action-sm" (click)="exportBitacoraCSV()" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34D399; display: flex; align-items: center; gap: 0.25rem;" title="Exportar Todo a CSV">
+                      📄 Exportar CSV
+                    </button>
                   </div>
                 </div>
                 
@@ -519,10 +533,18 @@
                             </span>
                           </td>
                           <td><strong class="time-text">{{ log.tiempoRespuestaMs }} {{ log.tiempoRespuestaMs !== '-' ? 'ms' : '' }}</strong></td>
-                          <td>
-                            <button class="btn-action-sm" (click)="verResultadosHistoricos(log)" [disabled]="!log.resultadoCompleto" title="Cargar resultados históricos">
-                              👁️ Ver
-                            </button>
+                          <td style="white-space: nowrap;">
+                            <div style="display: flex; gap: 0.35rem; align-items: center;">
+                              <button class="btn-action-sm" (click)="verResultadosHistoricos(log)" [disabled]="!log.resultadoCompleto" title="Cargar resultados históricos">
+                                👁️ Ver
+                              </button>
+                              <button class="btn-action-sm" (click)="exportSingleBitacoraJSON(log)" style="padding: 4px 8px; background: rgba(255,255,255,0.05); color: #94A3B8; border: 1px solid rgba(255,255,255,0.1); font-size: 11px; display: flex; align-items: center; gap: 0.2rem;" title="Descargar Fila en JSON">
+                                ⬇️ JSON
+                              </button>
+                              <button class="btn-action-sm" (click)="exportSingleBitacoraCSV(log)" style="padding: 4px 8px; background: rgba(255,255,255,0.05); color: #94A3B8; border: 1px solid rgba(255,255,255,0.1); font-size: 11px; display: flex; align-items: center; gap: 0.2rem;" title="Descargar Fila en CSV">
+                                ⬇️ CSV
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       }
