@@ -893,7 +893,7 @@
   width: 480px;
   max-width: 55%;
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 0;
   border: 1px solid rgba(124, 58, 237, 0.2);
   box-shadow: 0 10px 40px rgba(15, 23, 42, 0.18);
   overflow: hidden;
