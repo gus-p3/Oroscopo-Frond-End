@@ -876,36 +876,31 @@
   box-shadow: 0 3px 8px rgba(124, 58, 237, 0.25);
 }
 
-/* LAYOUT FLEXIBLE AL LADO DE LA TABLA PARA DETALLES DE PERSONALIDAD */
+/* LAYOUT TABLA CON PANEL DE ASPECTOS FLOTANTE ENCIMA */
 .table-with-detail-container {
-  display: flex;
-  gap: 20px;
+  position: relative;
   width: 100%;
-  align-items: flex-start;
-  transition: all 0.3s ease;
 }
 
 .table-content-column {
-  flex: 1;
-  min-width: 0;
   width: 100%;
-  transition: all 0.3s ease;
 }
 
 .table-detail-column {
+  position: absolute;
+  top: 0;
+  right: 0;
   width: 480px;
-  max-width: 45%;
-  flex-shrink: 0;
+  max-width: 55%;
   background: #ffffff;
   border-radius: 24px;
   border: 1px solid rgba(124, 58, 237, 0.2);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.18);
   overflow: hidden;
-  position: sticky;
-  top: 90px;
-  max-height: calc(100vh - 110px);
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
+  z-index: 100;
   animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -920,16 +915,6 @@
   }
 }
 
-@media (max-width: 1024px) {
-  .table-with-detail-container.has-detail-open {
-    flex-direction: column;
-  }
-  .table-detail-column {
-    width: 100%;
-    max-width: 100%;
-    position: static;
-  }
-}
 
 @keyframes fadeIn {
   from { opacity: 0; }
