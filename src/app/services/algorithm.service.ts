@@ -34,11 +34,20 @@ export interface PersonaCluster {
   elementoPredominante?: string;
   elementoPredominanteId?: string;
   cluster: number;
+  respuestas?: Record<string, number>;
+}
+
+export interface PreguntaDetail {
+  id: string;
+  numero: number;
+  texto: string;
+  aspectoNombre: string;
 }
 
 export interface KMeansResultResponse {
   message: string;
   personas?: PersonaCluster[];
+  preguntas?: PreguntaDetail[];
   result: {
     k: number;
     labels: number[];
@@ -56,6 +65,7 @@ export interface KMeansResultResponse {
 export interface HierarchicalResultResponse {
   message: string;
   personas?: PersonaCluster[];
+  preguntas?: PreguntaDetail[];
   result: {
     linkage_matrix?: number[][];
     linkageMatrix?: number[][];

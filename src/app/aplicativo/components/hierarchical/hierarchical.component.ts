@@ -1072,6 +1072,79 @@ ${cardsHtml}
 </body></html>`);
     printWindow.document.close();
   }
+
+  selectedStatsCluster: number | 'all' = 'all';
+
+  getStatsForSelectedCluster() {
+    const personas = this.data?.personas || [];
+    const preguntas = this.data?.preguntas || [];
+    if (personas.length === 0 || preguntas.length === 0) return [];
+
+    // En clustering jerárquico las personas obtienen su cluster asignado en updateClusters()
+    // por lo tanto usamos p.cluster asignado localmente
+    const filteredPersonas = this.selectedStatsCluster === 'all'
+      ? personas
+      : personas.filter(p => p.cluster === this.selectedStatsCluster);
+
+    return preguntas.map(preg => {
+      const vals = filteredPersonas
+        .map(p => p.respuestas ? p.respuestas[preg.id] : undefined)
+        .filter(v => v !== undefined) as number[];
+
+      const n = vals.length;
+      if (n === 0) {
+        return {
+          preguntaId: preg.id,
+          numero: preg.numero,
+          texto: preg.texto,
+          aspectoNombre: preg.aspectoNombre,
+          media: 0,
+          mediana: 0,
+          moda: 0,
+          desviacion: 0,
+          varianza: 0
+        };
+      }
+
+      // 1. Media
+      const sum = vals.reduce((a, b) => a + b, 0);
+      const media = sum / n;
+
+      // 2. Mediana
+      const sorted = [...vals].sort((a, b) => a - b);
+      const mid = Math.floor(n / 2);
+      const mediana = n % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+
+      // 3. Moda
+      const counts: Record<number, number> = {};
+      let maxCount = 0;
+      let moda = vals[0];
+      vals.forEach(v => {
+        counts[v] = (counts[v] || 0) + 1;
+        if (counts[v] > maxCount) {
+          maxCount = counts[v];
+          moda = v;
+        }
+      });
+
+      // 4. Varianza y Desviación Estándar
+      const varianceSum = vals.reduce((a, b) => a + Math.pow(b - media, 2), 0);
+      const varianza = n > 1 ? varianceSum / (n - 1) : 0;
+      const desviacion = Math.sqrt(varianza);
+
+      return {
+        preguntaId: preg.id,
+        numero: preg.numero,
+        texto: preg.texto,
+        aspectoNombre: preg.aspectoNombre,
+        media,
+        mediana,
+        moda,
+        desviacion,
+        varianza
+      };
+    });
+  }
 }
 
 
