@@ -91,10 +91,18 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.cargarHistorialBitacora();
-    // Cargar catálogos para filtros
+    // Cargar catálogos para filtros con fallback estático para modo sin BD
+    const fallbackSignos = [
+      'Aries', 'Tauro', 'Géminis', 'Cáncer', 'Leo', 'Virgo',
+      'Libra', 'Escorpión', 'Sagitario', 'Capricornio', 'Acuario', 'Piscis'
+    ].map(n => ({ _id: n, nombre: n }));
+
     this.apiService.getCatalogos().subscribe({
       next: (res) => {
-        this.signos = res.signos || [];
+        this.signos = (res && res.signos && res.signos.length > 0) ? res.signos : fallbackSignos;
+      },
+      error: () => {
+        this.signos = fallbackSignos;
       }
     });
 
@@ -289,6 +297,17 @@ export class DashboardComponent implements OnInit {
     };
   }
 
+  showDisplayDimensions: boolean = false;
+  expandedLogDimensions: Record<string, boolean> = {};
+
+  toggleLogDimensions(logId: string) {
+    this.expandedLogDimensions[logId] = !this.expandedLogDimensions[logId];
+  }
+
+  isLogDimensionsExpanded(logId: string): boolean {
+    return !!this.expandedLogDimensions[logId];
+  }
+
   cargarHistorialBitacora() {
     this.apiService.getBitacora().subscribe({
       next: (res) => {
@@ -299,12 +318,14 @@ export class DashboardComponent implements OnInit {
           totalPersonas: b.filtrosDataset?.totalRegistros || 'Todas',
           totalPreguntas: b.filtrosDataset?.totalPreguntas || 'Todas',
           preguntasDetalle: b.filtrosDataset?.preguntasDetalle || '',
+          preguntasLista: b.filtrosDataset?.preguntasLista || [],
           parametros: b.algoritmo === 'kmeans' 
             ? { k: b.parametrosUsados?.k, pca: b.parametrosUsados?.incluirPCA } 
             : { metodoEnlace: b.parametrosUsados?.metodoEnlace, nClusters: b.parametrosUsados?.nClusters },
           tiempoRespuestaMs: '-', // No está en DB, se muestra para nuevas
           resultadoCompleto: b.resultadoCompleto,
           rutaModelo: b.rutaModelo,
+          modeloOrigen: b.modeloOrigen || b.parametrosUsados?.modeloOrigenDetalle || 'Nuevo (desde cero)',
           raw: b
         }));
         this.savedModels = this.bitacoraLogs.filter(log => log.rutaModelo);
@@ -456,20 +477,25 @@ export class DashboardComponent implements OnInit {
     const log = this.savedModels.find(m => m._id === this.selectedSavedModelId);
     if (!log) return;
 
-    // Verificar dimensiones (campos)
-    const requiredFields = log.raw?.filtrosDataset?.preguntasDetalle?.split(', ') || [];
+    // Verificar dimensiones (campos) usando el arreglo nativo o fallback a split
+    let requiredFields: string[] = [];
+    if (log.raw?.filtrosDataset?.preguntasLista && Array.isArray(log.raw.filtrosDataset.preguntasLista)) {
+      requiredFields = log.raw.filtrosDataset.preguntasLista;
+    } else if (log.preguntasLista && Array.isArray(log.preguntasLista)) {
+      requiredFields = log.preguntasLista;
+    } else if (log.raw?.filtrosDataset?.preguntasDetalle) {
+      requiredFields = log.raw.filtrosDataset.preguntasDetalle.split(', ');
+    } else if (log.preguntasDetalle) {
+      requiredFields = log.preguntasDetalle.split(', ');
+    }
     
     const fieldsUsed = this.camposSeleccionados.length > 0 ? this.camposSeleccionados : this.csvHeaders;
     
     const missing = requiredFields.filter((f: string) => !fieldsUsed.includes(f));
     
     if (missing.length > 0) {
-      this.savedModelError = `El modelo guardado requiere dimensiones que no están seleccionadas en el dataset actual: ${missing.join(', ')}. Por favor, ve a la Fase 2 y selecciónalas.`;
-      // Set to force empty selection to prevent execution
+      this.savedModelError = `El modelo guardado requiere dimensiones que no están seleccionadas en el dataset actual: ${missing.join(' | ')}. Por favor, ve a la Fase 2 y selecciónalas.`;
     } else {
-      // Force selected dimensions to match exactly what the model expects?
-      // User requested "solo le permita seleccionar las dimensiones que ya se usaron"
-      // We can just automatically select them.
       this.camposSeleccionados = [...requiredFields];
       this.savedModelError = '';
       
@@ -542,7 +568,6 @@ export class DashboardComponent implements OnInit {
   }
 
   executeAlgorithm() {
-    this.currentPhase = 'fase4';
     this.isLoading = true;
     this.errorMessage = '';
     const inicioMs = Date.now();
@@ -551,9 +576,25 @@ export class DashboardComponent implements OnInit {
     const customDataset = this.getCustomDatasetPayload();
     const camposDetalle = fieldsUsed.join(', ');
 
+    let modeloOrigenText = 'Nuevo (Modelo desde cero)';
+    if (this.selectedSavedModelId) {
+      const sourceLog = this.savedModels.find(m => m._id === this.selectedSavedModelId);
+      if (sourceLog) {
+        const fechaStr = sourceLog.fecha ? new Date(sourceLog.fecha).toLocaleString() : '';
+        modeloOrigenText = `Reutilizado de: ${sourceLog.algoritmo} (${fechaStr || sourceLog._id.substring(0, 8)})`;
+      }
+    }
+
     if (this.selectedAlgorithmId === 'kmeans') {
+      const kNum = Number(this.kValue);
+      if (isNaN(kNum) || kNum < 2) {
+        this.errorMessage = 'El número de clusters (K) debe ser un entero mayor o igual a 2.';
+        this.isLoading = false;
+        return;
+      }
+
       const payload: KMeansParams = {
-        k: Number(this.kValue),
+        k: kNum,
         incluirPCA: this.incluirPCA,
         ids: this.personaIdsSeleccionadas,
         questions: fieldsUsed,
@@ -569,6 +610,7 @@ export class DashboardComponent implements OnInit {
         next: (res) => {
           this.kmeansData = res;
           this.isLoading = false;
+          this.currentPhase = 'fase4';
 
           const clusterSizes: Record<number, number> = {};
           if (res.result && res.result.labels) {
@@ -579,15 +621,26 @@ export class DashboardComponent implements OnInit {
 
           this.currentBitacoraPayload = {
             algoritmo: 'kmeans',
-            parametrosUsados: { k: payload.k, incluirPCA: payload.incluirPCA },
-            filtrosDataset: { totalRegistros: (customDataset?.ids || []).length, totalPreguntas: fieldsUsed.length, preguntasDetalle: camposDetalle },
+            parametrosUsados: { 
+              k: payload.k, 
+              incluirPCA: payload.incluirPCA,
+              modeloOrigenId: this.selectedSavedModelId || null,
+              modeloOrigenDetalle: modeloOrigenText
+            },
+            filtrosDataset: { 
+              totalRegistros: (customDataset?.ids || []).length, 
+              totalPreguntas: fieldsUsed.length, 
+              preguntasDetalle: camposDetalle,
+              preguntasLista: fieldsUsed
+            },
             resumenResultados: {
                 numClusters: payload.k,
                 inercia: res.result.inercia,
                 clusterSizes
             },
             resultadoCompleto: res,
-            rutaModelo: res.result?.rutaModelo
+            rutaModelo: res.result?.rutaModelo,
+            modeloOrigen: modeloOrigenText
           };
 
           this.currentBitacoraDisplay = {
@@ -597,6 +650,7 @@ export class DashboardComponent implements OnInit {
             totalPreguntas: fieldsUsed.length || 'Todas',
             preguntasDetalle: camposDetalle,
             parametros: { k: payload.k, pca: payload.incluirPCA },
+            modeloOrigen: modeloOrigenText,
             tiempoRespuestaMs: Date.now() - inicioMs,
             resultadoCompleto: res
           };
@@ -625,6 +679,7 @@ export class DashboardComponent implements OnInit {
         next: (res) => {
           this.hierarchicalData = res;
           this.isLoading = false;
+          this.currentPhase = 'fase4';
 
           const clusterSizes: Record<number, number> = {};
           const labels = res.result.labels || [];
@@ -636,16 +691,24 @@ export class DashboardComponent implements OnInit {
             algoritmo: 'jerarquico',
             parametrosUsados: { 
                 metodoEnlace: payload.metodoEnlace,
-                incluirPCA: payload.incluirPCA
+                incluirPCA: payload.incluirPCA,
+                modeloOrigenId: this.selectedSavedModelId || null,
+                modeloOrigenDetalle: modeloOrigenText
             },
-            filtrosDataset: { totalRegistros: (customDataset?.ids || []).length, totalPreguntas: fieldsUsed.length, preguntasDetalle: camposDetalle },
+            filtrosDataset: { 
+              totalRegistros: (customDataset?.ids || []).length, 
+              totalPreguntas: fieldsUsed.length, 
+              preguntasDetalle: camposDetalle,
+              preguntasLista: fieldsUsed
+            },
             resumenResultados: {
                 linkageMatrixLength: res.result.linkageMatrix?.length || res.result.linkage_matrix?.length || 0,
                 metodoEnlace: payload.metodoEnlace,
                 clusterSizes
             },
             resultadoCompleto: res,
-            rutaModelo: res.result?.rutaModelo
+            rutaModelo: res.result?.rutaModelo,
+            modeloOrigen: modeloOrigenText
           };
 
           this.currentBitacoraDisplay = {
@@ -655,6 +718,7 @@ export class DashboardComponent implements OnInit {
             totalPreguntas: fieldsUsed.length || 'Todas',
             preguntasDetalle: camposDetalle,
             parametros: { metodoEnlace: payload.metodoEnlace },
+            modeloOrigen: modeloOrigenText,
             tiempoRespuestaMs: Date.now() - inicioMs,
             resultadoCompleto: res
           };
@@ -745,7 +809,7 @@ export class DashboardComponent implements OnInit {
 
   exportBitacoraCSV() {
     if (this.bitacoraLogs.length === 0) return;
-    const headers = ['Fecha', 'Algoritmo', 'Registros (Personas)', 'Dimensiones (Preguntas)', 'Parametros', 'Tiempo Respuesta (ms)'];
+    const headers = ['Fecha', 'Algoritmo', 'Modelo Base / Origen', 'Registros (Personas)', 'Dimensiones (Preguntas)', 'Parametros', 'Tiempo Respuesta (ms)'];
     const rows = this.bitacoraLogs.map(log => {
       const fechaStr = new Date(log.fecha).toLocaleString();
       const paramsStr = log.algoritmo === 'K-Means' || log.algoritmo === 'kmeans'
@@ -754,6 +818,7 @@ export class DashboardComponent implements OnInit {
       return [
         `"${fechaStr}"`,
         `"${log.algoritmo}"`,
+        `"${log.modeloOrigen || 'Nuevo (desde cero)'}"`,
         `"${log.totalPersonas}"`,
         `"${log.totalPreguntas}"`,
         `"${paramsStr}"`,
@@ -772,7 +837,7 @@ export class DashboardComponent implements OnInit {
   }
 
   exportSingleBitacoraCSV(log: any) {
-    const headers = ['Fecha', 'Algoritmo', 'Registros (Personas)', 'Dimensiones (Preguntas)', 'Parametros', 'Tiempo Respuesta (ms)'];
+    const headers = ['Fecha', 'Algoritmo', 'Modelo Base / Origen', 'Registros (Personas)', 'Dimensiones (Preguntas)', 'Parametros', 'Tiempo Respuesta (ms)'];
     const fechaStr = new Date(log.fecha).toLocaleString();
     const paramsStr = log.algoritmo === 'K-Means' || log.algoritmo === 'kmeans'
       ? `k=${log.parametros?.k || '-'};pca=${log.parametros?.pca ? 'Si' : 'No'}` 
@@ -780,6 +845,7 @@ export class DashboardComponent implements OnInit {
     const row = [
       `"${fechaStr}"`,
       `"${log.algoritmo}"`,
+      `"${log.modeloOrigen || 'Nuevo (desde cero)'}"`,
       `"${log.totalPersonas}"`,
       `"${log.totalPreguntas}"`,
       `"${paramsStr}"`,

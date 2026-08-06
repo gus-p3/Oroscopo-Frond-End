@@ -12,7 +12,7 @@
         <div class="phase-header flex-header">
           <div>
             <h2>👥 Fase 1: Selección de Personas</h2>
-            <p>Selecciona o filtra los registros de personas almacenados en la base de datos para incluirlos en el análisis de agrupamiento.</p>
+            <p>Selecciona o filtra los registros de personas cargados mediante CSV para incluirlos en el análisis de agrupamiento.</p>
           </div>
           <div class="header-actions-wrapper">
             <div class="selection-status-badge">
@@ -549,7 +549,7 @@
       <div class="phase-card">
         <div class="phase-header">
           <h2>📋 Fase 5: Guardar en Bitácora</h2>
-          <p>Almacena la configuración y los resultados de la última ejecución en la base de datos.</p>
+          <p>Almacena la configuración y los resultados de la última ejecución en el historial de sesión (exportable a JSON o CSV).</p>
         </div>
         
         <div class="phase-body">
@@ -560,7 +560,21 @@
               <p><strong>Registros (Personas):</strong> {{ currentBitacoraDisplay.totalPersonas }}</p>
               <p><strong>Dimensiones (Preguntas):</strong> {{ currentBitacoraDisplay.totalPreguntas }}
                 @if (currentBitacoraDisplay.preguntasDetalle) {
-                  <br><small style="color: #64748B;">{{ currentBitacoraDisplay.preguntasDetalle }}</small>
+                  <div style="margin-top: 4px;">
+                    @if (!showDisplayDimensions && currentBitacoraDisplay.preguntasDetalle.length > 40) {
+                      <small style="color: #64748B; font-size: 11px; display: inline-block; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;">
+                        {{ currentBitacoraDisplay.preguntasDetalle }}
+                      </small>
+                      <button type="button" class="btn-ver-mas-sm" (click)="showDisplayDimensions = true">👁️ Ver más</button>
+                    } @else {
+                      <small style="color: #64748B; font-size: 11px; display: block; max-width: 400px; word-break: break-word;">
+                        {{ currentBitacoraDisplay.preguntasDetalle }}
+                      </small>
+                      @if (currentBitacoraDisplay.preguntasDetalle.length > 40) {
+                        <button type="button" class="btn-ver-mas-sm" (click)="showDisplayDimensions = false">🙈 Ver menos</button>
+                      }
+                    }
+                  </div>
                 }
               </p>
               
@@ -572,6 +586,9 @@
                 } @else {
                   <p style="margin: 0; font-size: 0.9rem;">🔗 <strong>Método de Enlace:</strong> {{ currentBitacoraDisplay.parametros.metodoEnlace }}</p>
                   <p style="margin: 0; font-size: 0.9rem;">🎯 <strong>Número de Clusters Cortados:</strong> 3</p>
+                }
+                @if (currentBitacoraDisplay.modeloOrigen) {
+                  <p style="margin: 6px 0 0 0; font-size: 0.9rem;">🤖 <strong>Modelo Base / Origen:</strong> {{ currentBitacoraDisplay.modeloOrigen }}</p>
                 }
               </div>
               
@@ -615,7 +632,7 @@
                     <span class="config-icon">📋</span>
                     <div>
                       <h2 class="config-title">Historial de Corridas Guardadas</h2>
-                      <p class="config-subtitle">Ejecuciones almacenadas en la base de datos y la sesión actual</p>
+                      <p class="config-subtitle">Ejecuciones almacenadas en el historial de sesión y archivos exportados</p>
                     </div>
                   </div>
                   <div class="bitacora-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
@@ -638,6 +655,7 @@
                       <tr>
                         <th>Fecha / Hora</th>
                         <th>Algoritmo</th>
+                        <th>Modelo Base / Origen</th>
                         <th>Registros (Personas)</th>
                         <th>Dimensiones (Preguntas)</th>
                         <th>Parámetros</th>
@@ -650,11 +668,36 @@
                         <tr>
                           <td>{{ log.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                           <td><span class="algo-badge">{{ log.algoritmo }}</span></td>
+                          <td>
+                            @if (log.modeloOrigen && !log.modeloOrigen.includes('Nuevo')) {
+                              <span class="params-pill" style="background: rgba(167, 139, 250, 0.15); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.3); font-size: 11px;">
+                                🤖 {{ log.modeloOrigen }}
+                              </span>
+                            } @else {
+                              <span style="color: #64748B; font-size: 11px; font-weight: 500;">
+                                🌱 Nuevo (desde cero)
+                              </span>
+                            }
+                          </td>
                           <td>{{ log.totalPersonas }}</td>
                           <td>
-                            {{ log.totalPreguntas }}
+                            <strong>{{ log.totalPreguntas }}</strong>
                             @if (log.preguntasDetalle) {
-                              <br><small style="color: #64748B; font-size: 11px;">{{ log.preguntasDetalle }}</small>
+                              <div style="margin-top: 4px;">
+                                @if (!isLogDimensionsExpanded(log._id || $index) && log.preguntasDetalle.length > 30) {
+                                  <small style="color: #64748B; font-size: 11px; display: inline-block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;">
+                                    {{ log.preguntasDetalle }}
+                                  </small>
+                                  <button type="button" class="btn-ver-mas-sm" (click)="toggleLogDimensions(log._id || $index)">👁️ Ver más</button>
+                                } @else {
+                                  <small style="color: #64748B; font-size: 11px; display: block; max-width: 280px; word-break: break-word;">
+                                    {{ log.preguntasDetalle }}
+                                  </small>
+                                  @if (log.preguntasDetalle.length > 30) {
+                                    <button type="button" class="btn-ver-mas-sm" (click)="toggleLogDimensions(log._id || $index)">🙈 Ver menos</button>
+                                  }
+                                }
+                              </div>
                             }
                           </td>
                           <td>

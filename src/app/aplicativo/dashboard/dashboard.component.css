@@ -968,3 +968,26 @@ app-nav-bar {
   font-weight: bold;
 }
 
+/* BOTÓN DE VER MÁS / VER MENOS EN DIMENSIONES */
+.btn-ver-mas-sm {
+  background: rgba(124, 58, 237, 0.08);
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.btn-ver-mas-sm:hover {
+  background: #7c3aed;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);
+}
+
+
